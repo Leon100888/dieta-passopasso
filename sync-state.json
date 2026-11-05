@@ -1,0 +1,275 @@
+{
+  "dayOrder": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "people": {
+    "leonardo": {
+      "waterByDate": {
+        "2026-11-04": 2000
+      },
+      "mealsByDate": {
+        "2026-11-04": {
+          "cena": true,
+          "colazione": true,
+          "spuntino": true,
+          "pranzo": true,
+          "merenda": true
+        }
+      },
+      "symptomsByDate": {},
+      "stepsByDate": {},
+      "sportLogsByDate": {},
+      "choicesByDay": {
+        "mercoledi_merenda_0": 2,
+        "mercoledi_cena_1": 3,
+        "giovedi_merenda_0": 2,
+        "giovedi_cena_0": 1,
+        "giovedi_cena_1": 4
+      },
+      "streakDays": 1,
+      "completedDates": [
+        "2026-11-04"
+      ],
+      "weightLogs": [
+        {
+          "date": "2026-11-04",
+          "kg": 130
+        },
+        {
+          "date": "2026-11-04",
+          "kg": 128
+        }
+      ],
+      "goalWeight": 78,
+      "lastUpdated": 1793822157384
+    },
+    "vitalucia": {
+      "waterByDate": {
+        "2026-11-04": 2000
+      },
+      "mealsByDate": {
+        "2026-11-04": {
+          "colazione": true,
+          "spuntino": true,
+          "pranzo": true,
+          "merenda": true,
+          "cena": true
+        }
+      },
+      "symptomsByDate": {
+        "2026-11-04": {
+          "energy": "good",
+          "bloating": "mild",
+          "sleep": "rested"
+        }
+      },
+      "stepsByDate": {},
+      "sportLogsByDate": {},
+      "choicesByDay": {},
+      "streakDays": 1,
+      "completedDates": [
+        "2026-11-04"
+      ],
+      "weightLogs": [
+        {
+          "date": "2026-11-04",
+          "kg": 98
+        }
+      ],
+      "goalWeight": 62,
+      "lastUpdated": 1793824931823
+    }
+  },
+  "shoppingStatus": {
+    "day_2026-11-04_Latte_Zymil": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814093047
+    },
+    "day_2026-11-04_Caffè_moka_in_tazza": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814095319
+    },
+    "day_2026-11-04_Zucchero_di_canna": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814096439
+    },
+    "day_2026-11-04_Biscotti_secchi": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814098748
+    },
+    "day_2026-11-04_Noci_secche": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814102607
+    },
+    "day_2026-11-04_Risotto_ai_funghi": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814104344
+    },
+    "day_2026-11-04_Uovo_di_gallina_-_intero_(2_uova)": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814105791
+    },
+    "day_2026-11-04_Parmigiano_grattugiato": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814107712
+    },
+    "day_2026-11-04_Insalata_mista": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814108793
+    },
+    "day_2026-11-04_Olio_di_oliva_extravergine_(a_crudo)": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814110647
+    },
+    "day_2026-11-04_Arancia_/_Mandarini_(150g)": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:41",
+      "updatedAt": 1793814112198
+    },
+    "day_2026-11-05_Latte_Zymil": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:42",
+      "updatedAt": 1793814121153
+    },
+    "day_2026-11-05_Caffè_moka_in_tazza": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:42",
+      "updatedAt": 1793814123196
+    },
+    "day_2026-11-05_Zucchero_di_canna": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:42",
+      "updatedAt": 1793814124572
+    },
+    "day_2026-11-05_Fette_biscottate_integrali": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:42",
+      "updatedAt": 1793814126524
+    },
+    "day_2026-11-05_Marmellata": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:42",
+      "updatedAt": 1793814128740
+    },
+    "day_2026-11-05_Olio_di_oliva_extravergine_(a_crudo)": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:42",
+      "updatedAt": 1793814137680
+    },
+    "day_2026-11-05_Mela_(150g)": {
+      "status": "inhouse",
+      "by": "Leonardo",
+      "time": "18:42",
+      "updatedAt": 1793814141472
+    },
+    "day_2026-11-04_Bresaola": {
+      "status": "bought",
+      "by": "Leonardo",
+      "time": "19:21",
+      "updatedAt": 1793816485225
+    },
+    "day_2026-11-04_Zucchine_(grigliate_/_trifolate)": {
+      "status": "bought",
+      "by": "Leonardo",
+      "time": "19:21",
+      "updatedAt": 1793816489061
+    },
+    "day_2026-11-04_Pane_di_tipo_integrale": {
+      "status": "bought",
+      "by": "Leonardo",
+      "time": "19:21",
+      "updatedAt": 1793816489737
+    },
+    "day_2026-11-04_Mela_(150g)": {
+      "status": "bought",
+      "by": "Leonardo",
+      "time": "19:21",
+      "updatedAt": 1793816519517
+    }
+  },
+  "customShoppingItems": [],
+  "coupleChatMessages": [
+    {
+      "id": "welcome_1",
+      "sender": "Sistema",
+      "senderKey": "system",
+      "text": "💑 App sincronizzata col calendario! Ogni scelta di piatto o spunta della spesa si aggiorna in tempo reale tra i vostri due telefoni.",
+      "time": "Oggi"
+    },
+    {
+      "id": "msg_1793814160152_73df",
+      "sender": "Leonardo",
+      "senderKey": "leonardo",
+      "text": "💧 Amore, beviamo un bicchiere d'acqua insieme!",
+      "time": "18:42",
+      "timestamp": 1793814160152
+    },
+    {
+      "id": "msg_1793814169249_5b32",
+      "sender": "Leonardo",
+      "senderKey": "leonardo",
+      "text": "Amore mio",
+      "time": "18:42",
+      "timestamp": 1793814169249
+    },
+    {
+      "id": "welcome_v5",
+      "sender": "Sistema",
+      "senderKey": "system",
+      "text": "💑 Condivisione attiva! I messaggi qui arrivano con notifica e suono stile WhatsApp.",
+      "time": "Oggi"
+    },
+    {
+      "id": "msg_1793821696437_ec9a",
+      "sender": "Leonardo",
+      "senderKey": "leonardo",
+      "text": "💧 Beviamo un bicchiere d'acqua!",
+      "time": "20:48",
+      "timestamp": 1793821696438
+    },
+    {
+      "id": "msg_1793824931823_2d43",
+      "sender": "Vita Lucia",
+      "senderKey": "vitalucia",
+      "text": "Amore mio",
+      "time": "21:42",
+      "timestamp": 1793824931823
+    }
+  ],
+  "doctorNotes": [],
+  "timestamp": 1793840867625,
+  "shoppingChecked": {}
+}

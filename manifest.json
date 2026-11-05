@@ -1,0 +1,71 @@
+{
+  "id": "/dieta-pastoressa-leo-vita",
+  "name": "Dieta PassoPasso PRO v5.0",
+  "short_name": "Dieta PRO",
+  "description": "Piano terapeutico Dott. Pastoressa v5.0: App personale con Widget Live, sveglie pasti intelligenti, 2L acqua e Chat Coppia con notifiche.",
+  "start_url": "./?v=5.0",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f7f4",
+  "theme_color": "#0f766e",
+  "orientation": "portrait-primary",
+  "lang": "it-IT",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "✅ Segna Pasto di Oggi",
+      "short_name": "Segna Pasto",
+      "description": "Apri subito il menu di oggi e spunta il pasto",
+      "url": "./?v=5.0",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "💧 +1 Bicchiere Acqua",
+      "short_name": "+250ml Acqua",
+      "description": "Aggiungi rapidamente 1 bicchiere di acqua (250ml)",
+      "url": "./?quickWater=1",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "💬 Chat Coppia & Percorso",
+      "short_name": "Chat Coppia",
+      "description": "Apri la Bacheca Messaggi tra Leonardo e Vita Lucia",
+      "url": "./?tab=progressi",
+      "icons": [
+        {
+          "src": "./icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

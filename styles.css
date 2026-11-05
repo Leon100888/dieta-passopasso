@@ -1,0 +1,1518 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ==========================================================================
+   SISTEMA DI DESIGN COMMERCIALE UNIVERSALE (ANDROID & iOS)
+   Supporta Modalità Bianca Signorile (theme-light) e Scura Notte (theme-dark)
+   e 3 scale dimensionali per schermi da 360px a 440px+
+   ========================================================================== */
+
+html {
+  font-size: 17px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body.font-scale-normal { font-size: 15.5px; }
+body.font-scale-large  { font-size: 17px; }
+body.font-scale-xlarge { font-size: 18.8px; }
+
+:root,
+body.theme-light {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+
+  --bg-main: #f5f3ec;
+  --bg-card: #ffffff;
+  --bg-subtle: #f8f6f0;
+  --bg-inset: #efeae0;
+  --bg-overlay: rgba(15, 23, 42, 0.68);
+
+  --border-subtle: #dfd9c8;
+  --border-strong: #c7bda6;
+  --border-accent: #0f766e;
+
+  --text-primary: #141c24;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  --accent-emerald: #0f766e;
+  --accent-emerald-light: #e6f4f1;
+  --accent-emerald-text: #065f46;
+
+  --accent-gold: #9a6f1a;
+  --accent-gold-light: #fef7e6;
+  --accent-gold-text: #78500d;
+
+  --accent-sky: #0369a1;
+  --accent-sky-light: #e0f2fe;
+
+  --accent-rose: #be123c;
+  --accent-rose-light: #ffe4e6;
+
+  --shadow-card: 0 6px 22px -4px rgba(20, 28, 36, 0.07);
+  --shadow-float: 0 14px 34px -6px rgba(20, 28, 36, 0.18);
+  --radius-xl: 20px;
+  --radius-lg: 15px;
+  --radius-md: 12px;
+}
+
+body.theme-dark {
+  --bg-main: #090d16;
+  --bg-card: #121a2a;
+  --bg-subtle: #172135;
+  --bg-inset: #0b101b;
+  --bg-overlay: rgba(3, 6, 12, 0.82);
+
+  --border-subtle: rgba(197, 160, 89, 0.22);
+  --border-strong: rgba(197, 160, 89, 0.42);
+  --border-accent: #10b981;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --accent-emerald: #10b981;
+  --accent-emerald-light: rgba(16, 185, 129, 0.15);
+  --accent-emerald-text: #6ee7b7;
+
+  --accent-gold: #d4af37;
+  --accent-gold-light: rgba(212, 175, 55, 0.15);
+  --accent-gold-text: #fde68a;
+
+  --accent-sky: #38bdf8;
+  --accent-sky-light: rgba(56, 189, 248, 0.15);
+
+  --accent-rose: #fb7185;
+  --accent-rose-light: rgba(251, 113, 133, 0.15);
+
+  --shadow-card: 0 10px 28px -6px rgba(0, 0, 0, 0.55);
+  --shadow-float: 0 16px 38px -6px rgba(0, 0, 0, 0.75);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: calc(92px + env(safe-area-inset-bottom, 10px));
+  line-height: 1.48;
+  overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 15px 28px;
+}
+
+/* ==========================================================================
+   HEADER SUPERIORE PULITO E SIGNORILE
+   ========================================================================== */
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0 12px;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--accent-emerald-light);
+  border: 1.5px solid var(--border-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+  flex-shrink: 0;
+}
+
+.brand-title h1 {
+  font-family: var(--font-serif);
+  font-size: 1.42rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-subtitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-emerald-text);
+  margin-top: 2px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.header-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+
+.options-pill-btn {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 13px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ==========================================================================
+   STRISCIA COMPATTA STATO DEL PARTNER
+   ========================================================================== */
+.partner-status-strip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 10px 13px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-card);
+}
+
+.partner-status-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--text-secondary);
+}
+
+.partner-nudge-mini {
+  background: var(--accent-sky-light);
+  color: var(--accent-sky);
+  border: 1px solid transparent;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   DOMANDA INTERATTIVA DELL'ORA ("Ore 09:00: hai fatto Colazione? SÌ / NO")
+   ========================================================================== */
+.smart-question-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-accent);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.sq-top-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--accent-emerald-light);
+  color: var(--accent-emerald-text);
+  margin-bottom: 6px;
+}
+
+.sq-question-title {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.22;
+  margin-bottom: 5px;
+}
+
+.sq-question-sub {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 13px;
+}
+
+.sq-buttons-row {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 10px;
+}
+
+.btn-yes-large {
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: none;
+  background: var(--accent-emerald);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-no-large {
+  min-height: 52px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   BARRA PROGRESSI RAPIDI GIORNATA (Spunta in 1 Tocco)
+   ========================================================================== */
+.quick-check-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 12px 13px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.quick-check-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  margin-bottom: 9px;
+}
+
+.quick-check-count {
+  color: var(--accent-emerald-text);
+  background: var(--accent-emerald-light);
+  padding: 2px 9px;
+  border-radius: 99px;
+}
+
+.quick-check-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.qc-chip-btn {
+  min-height: 56px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  padding: 6px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qc-chip-btn .qc-icon {
+  font-size: 1.2rem;
+}
+
+.qc-chip-btn .qc-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.qc-chip-btn.done {
+  background: var(--accent-emerald-light);
+  border-color: var(--accent-emerald);
+  color: var(--accent-emerald-text);
+}
+
+/* ==========================================================================
+   SELETTORE 7 GIORNI DEL CALENDARIO
+   ========================================================================== */
+.day-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.day-pill {
+  min-height: 54px;
+  border-radius: 13px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  padding: 7px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.day-pill .day-short {
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.day-pill .day-date-sub {
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.day-pill.today {
+  border-color: var(--accent-emerald);
+}
+
+.day-pill.active {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+  color: #ffffff;
+}
+
+.day-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.day-main-heading {
+  font-family: var(--font-serif);
+  font-size: 1.38rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.day-sub-theme {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   SCHEDE PASTO PULITE, GRANDI E LEGGIBILI
+   ========================================================================== */
+.meals-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.meal-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease;
+}
+
+.meal-card.completed {
+  border-color: var(--accent-emerald);
+  background: var(--bg-subtle);
+}
+
+.meal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.meal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.meal-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.meal-name {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.meal-time-badge {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.check-meal-btn {
+  min-height: 46px;
+  padding: 8px 15px;
+  border-radius: 13px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.meal-card.completed .check-meal-btn {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+  color: #ffffff;
+}
+
+/* Righe Alimenti Grandi e Chiare */
+.food-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.food-row {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 13px 14px;
+}
+
+.food-row-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.food-name {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.32;
+}
+
+.food-dose-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dose-pill {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dose-primary {
+  background: var(--accent-emerald-light);
+  color: var(--accent-emerald-text);
+  border: 1px solid var(--border-accent);
+}
+
+.dose-cooked {
+  background: var(--accent-gold-light);
+  color: var(--accent-gold-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.dose-pot2 {
+  background: var(--accent-sky-light);
+  color: var(--accent-sky);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Menu a tendina Alternative */
+.choice-select,
+.input-field {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.96rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.input-field {
+  margin-top: 0;
+}
+
+/* Fisarmonica Ricetta & Procedimento (Così non affolla mai la pagina!) */
+.recipe-accordion,
+.clean-accordion {
+  margin-top: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--bg-subtle);
+  overflow: hidden;
+}
+
+.clean-accordion {
+  margin-top: 0;
+  margin-bottom: 14px;
+  background: var(--bg-card);
+}
+
+.recipe-accordion-summary,
+.clean-accordion-summary {
+  list-style: none;
+  padding: 13px 14px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--accent-emerald-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recipe-accordion-summary::-webkit-details-marker,
+.clean-accordion-summary::-webkit-details-marker {
+  display: none;
+}
+
+.recipe-accordion-body,
+.clean-accordion-body {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.92rem;
+  color: var(--text-primary);
+}
+
+.recipe-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.recipe-step-item {
+  line-height: 1.45;
+}
+
+.recipe-salt-rule {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--accent-gold-light);
+  color: var(--accent-gold-text);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.recipe-actions-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+
+/* ==========================================================================
+   PULSANTI E CARD GENERALI
+   ========================================================================== */
+.card-surface {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  margin-bottom: 15px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.card-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.28rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.card-helper-text {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.btn-primary {
+  min-height: 48px;
+  padding: 11px 18px;
+  border-radius: 13px;
+  border: none;
+  background: var(--accent-emerald);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  min-height: 48px;
+  padding: 11px 16px;
+  border-radius: 13px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-outline-small {
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.accordion-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--accent-emerald-light);
+  color: var(--accent-emerald-text);
+}
+
+.prep-list {
+  padding-left: 18px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prep-tomorrow {
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: var(--accent-gold-light);
+  color: var(--accent-gold-text);
+  font-size: 0.86rem;
+}
+
+/* ==========================================================================
+   ACQUA 2 LITRI & ORARI
+   ========================================================================== */
+.water-main-card {
+  text-align: center;
+}
+
+.water-big-number {
+  font-family: var(--font-serif);
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: var(--accent-sky);
+  margin: 4px 0;
+}
+
+.water-sub-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.progress-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 99px;
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent-sky), var(--accent-emerald));
+  transition: width 0.3s ease;
+}
+
+.glasses-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.glass-btn {
+  min-height: 70px;
+  border-radius: 13px;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.glass-btn.filled {
+  background: var(--accent-sky-light);
+  border-color: var(--accent-sky);
+  color: var(--accent-sky);
+}
+
+.time-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  font-weight: 700;
+}
+
+.time-input {
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   SPESA CONDIVISA & PERCORSO
+   ========================================================================== */
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 13px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+}
+
+.shop-item.bought,
+.shop-item.inhouse {
+  opacity: 0.68;
+}
+
+.shop-action-btn {
+  min-height: 42px;
+  padding: 7px 11px;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shop-action-btn.active-home {
+  background: var(--accent-emerald-light);
+  border-color: var(--accent-emerald);
+  color: var(--accent-emerald-text);
+}
+
+.shop-action-btn.active-bought {
+  background: var(--accent-gold-light);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold-text);
+}
+
+.editorial-quote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent-gold);
+  background: var(--bg-subtle);
+  border-radius: 0 12px 12px 0;
+  margin-bottom: 12px;
+}
+
+.weight-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.weight-stat-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 13px;
+  padding: 11px 8px;
+  text-align: center;
+}
+
+.weight-stat-box .val {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.weight-stat-box .lbl {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.chat-box {
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 13px;
+  padding: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-msg {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  max-width: 85%;
+}
+
+.chat-msg.mine {
+  align-self: flex-end;
+  background: var(--accent-emerald-light);
+  color: var(--accent-emerald-text);
+}
+
+.chat-msg.partner {
+  align-self: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ==========================================================================
+   MODALI: SCELTA PROPRIETARIO & MENU OPZIONI (⚙️ OPZIONI)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 980;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-strong);
+  border-radius: 24px;
+  padding: 22px 18px;
+  box-shadow: var(--shadow-float);
+  text-align: center;
+}
+
+.options-drawer-card {
+  text-align: left;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+}
+
+.options-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.close-modal-btn {
+  min-height: 40px;
+  padding: 6px 13px;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.options-scroll-body {
+  overflow-y: auto;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-gold-text);
+  background: var(--accent-gold-light);
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-bottom: 8px;
+}
+
+.modal-title {
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.modal-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.owner-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.owner-choice-card {
+  padding: 18px 12px;
+  border-radius: 18px;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.owner-choice-card:active,
+.owner-choice-card:hover {
+  border-color: var(--accent-emerald);
+  background: var(--accent-emerald-light);
+}
+
+.owner-emoji {
+  font-size: 2.5rem;
+}
+
+.owner-name {
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+.owner-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.option-group {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 13px;
+}
+
+.option-group-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.option-group-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.segmented-2,
+.segmented-3 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+.segmented-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.seg-btn {
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seg-btn.active {
+  background: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+  color: #ffffff;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+
+.toggle-row:first-of-type {
+  border-top: none;
+}
+
+.toggle-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.toggle-sub {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.toggle-checkbox {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--accent-emerald);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   BARRA DI NAVIGAZIONE INFERIORE A 4 PULSANTI GRANDI
+   ========================================================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  background: var(--bg-card);
+  border-top: 1.5px solid var(--border-subtle);
+  padding: 6px 10px calc(8px + env(safe-area-inset-bottom, 6px));
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.bottom-nav-inner {
+  max-width: 520px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.nav-tab {
+  min-height: 54px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.nav-tab .nav-icon {
+  font-size: 1.32rem;
+}
+
+.nav-tab .nav-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.nav-tab.active {
+  background: var(--accent-emerald-light);
+  color: var(--accent-emerald-text);
+}
+
+/* BARRE FLOTTANTI E TOAST */
+.floating-pill-bar {
+  position: fixed;
+  bottom: 82px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 940;
+  background: var(--accent-gold);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 99px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-float);
+  width: max-content;
+  max-width: 92vw;
+}
+
+.floating-pill-bar.voice-bar {
+  top: 14px;
+  bottom: auto;
+  background: var(--accent-emerald);
+}
+
+.floating-close-btn {
+  background: rgba(0, 0, 0, 0.25);
+  border: none;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.toast-container {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  width: calc(100% - 28px);
+  max-width: 440px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--text-primary);
+  color: var(--bg-card);
+  border: 1.5px solid var(--accent-gold);
+  padding: 13px 16px;
+  border-radius: 15px;
+  box-shadow: var(--shadow-float);
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   WIDGET CONTROLLO TOTALE SEMPRE ATTIVO & BANNER NOTIFICA STILE WHATSAPP
+   ========================================================================== */
+.live-widget-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 14px 15px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.lw-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+
+.lw-title-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-emerald-text);
+}
+
+.lw-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 99px;
+  background: var(--accent-emerald);
+  box-shadow: 0 0 8px var(--accent-emerald);
+}
+
+.lw-pin-btn {
+  padding: 5px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lw-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 11px;
+}
+
+.lw-metric-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 13px;
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.lw-metric-val {
+  font-size: 1.06rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.lw-metric-lbl {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.lw-mini-bar {
+  height: 5px;
+  background: var(--bg-inset);
+  border-radius: 99px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.lw-mini-fill {
+  height: 100%;
+  background: var(--accent-emerald);
+  border-radius: 99px;
+}
+
+.lw-mini-fill.sky {
+  background: var(--accent-sky);
+}
+
+.lw-partner-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.84rem;
+}
+
+/* BANNER IN ARRIVO STILE WHATSAPP */
+.wa-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 995;
+  width: calc(100% - 24px);
+  max-width: 480px;
+  background: #075e54;
+  color: #ffffff;
+  border: 2px solid #25d366;
+  border-radius: 18px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.wa-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.wa-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 99px;
+  background: #25d366;
+  color: #060911;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.wa-sender {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #a7f3d0;
+}
+
+.wa-text {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.wa-reply-btn {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: none;
+  background: #25d366;
+  color: #062c24;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wa-close-btn {
+  padding: 6px 9px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none !important;
+}

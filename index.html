@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dieta PassoPasso" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Dieta PassoPasso PRO v5.0 — Piano Dott. Pastoressa</title>
+  <link rel="manifest" href="./manifest.json?v=5.0" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="stylesheet" href="./styles.css?v=5.0" />
+  <script>
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        keys.forEach(function(k) {
+          if (k !== 'dieta-pastoressa-v5.0') caches.delete(k);
+        });
+      });
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(reg) {
+          if (reg.active && reg.active.scriptURL && reg.active.scriptURL.indexOf('v=5.0') === -1) {
+            reg.unregister();
+          }
+        });
+      });
+    }
+  </script>
+  <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js" defer></script>
+</head>
+<body class="theme-light font-scale-large">
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ===================================================================== -->
+  <!-- 1. FINESTRA SCELTA PROPRIETARIO TELEFONO (Solo al 1° avvio o Opzioni) -->
+  <!-- ===================================================================== -->
+  <div id="ownerSetupModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-badge">CONFIGURAZIONE PERSONALE</div>
+      <h2 class="modal-title">Di chi è questo telefono?</h2>
+      <p class="modal-subtitle">
+        Ogni telefono mostra solo il tuo piano personale e le tue grammature. I progressi completati e la lista della spesa resteranno condivisi in automatico con il partner.
+      </p>
+      <div class="owner-choice-grid">
+        <button class="owner-choice-card" onclick="selectPhoneOwner('leonardo')">
+          <span class="owner-emoji">👨🏻</span>
+          <span class="owner-name">Leonardo Meo</span>
+          <span class="owner-meta">Piano Uomo • Cod. 112078</span>
+        </button>
+        <button class="owner-choice-card" onclick="selectPhoneOwner('vitalucia')">
+          <span class="owner-emoji">👩🏻</span>
+          <span class="owner-name">Vita Lucia Cinieri</span>
+          <span class="owner-meta">Piano Donna • Cod. 112079</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 2. SVEGLIA INTERATTIVA CON DOMANDA ("Hai fatto colazione? SÌ / NO")   -->
+  <!-- ===================================================================== -->
+  <div id="continuousAlarmModal" class="modal-overlay hidden">
+    <div class="modal-card alarm-card">
+      <div id="alarmModalIcon" style="font-size:3.2rem; margin-bottom:6px;">🔔</div>
+      <div class="modal-badge">PROMEMORIA ATTIVO</div>
+      <h2 id="alarmModalTitle" class="modal-title">☕ Hai fatto Colazione?</h2>
+      <p id="alarmModalBody" class="modal-subtitle">
+        Tocca "SÌ, FATTO" per spuntare automaticamente il passaggio e fermare la suoneria.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button class="btn-yes-large" onclick="confirmActiveAlarmStep()">
+          ✅ SÌ, HO FATTO! (Spunta in automatico)
+        </button>
+        <button class="btn-no-large" onclick="snoozeActiveAlarm(15)">
+          ⏰ NO, RICORDAMELO TRA 15 MINUTI
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 3. MENU OPZIONI & ESTENSIONI PERSONALIZZABILI (⚙️ OPZIONI)            -->
+  <!-- ===================================================================== -->
+  <div id="optionsModal" class="modal-overlay hidden">
+    <div class="modal-card options-drawer-card">
+      <div class="options-header">
+        <div>
+          <div class="modal-badge" style="margin-bottom:2px;">PERSONALIZZAZIONE</div>
+          <h2 class="modal-title" style="margin:0;">⚙️ Opzioni &amp; Funzioni</h2>
+        </div>
+        <button class="close-modal-btn" onclick="closeOptionsModal()">✕ Chiudi</button>
+      </div>
+
+      <div class="options-scroll-body">
+        <!-- Aspetto Tema: Bianca Signorile / Scura Notte -->
+        <div class="option-group">
+          <div class="option-group-title">🎨 Stile Visivo dell'App</div>
+          <div class="segmented-2">
+            <button id="optThemeLightBtn" class="seg-btn" onclick="setThemeMode('light')">
+              ☀️ Bianca Signorile
+            </button>
+            <button id="optThemeDarkBtn" class="seg-btn" onclick="setThemeMode('dark')">
+              🌙 Scura Notte
+            </button>
+          </div>
+        </div>
+
+        <!-- Dimensione Caratteri per Cellulare -->
+        <div class="option-group">
+          <div class="option-group-title">🔍 Grandezza Testo su Cellulare</div>
+          <div class="segmented-3">
+            <button id="optFontNormalBtn" class="seg-btn" onclick="setFontSizeScale('normal')">Normale</button>
+            <button id="optFontLargeBtn" class="seg-btn" onclick="setFontSizeScale('large')">Grande</button>
+            <button id="optFontXlargeBtn" class="seg-btn" onclick="setFontSizeScale('xlarge')">Molto Grande</button>
+          </div>
+        </div>
+
+        <!-- Titolare del Telefono -->
+        <div class="option-group">
+          <div class="option-group-title">📱 Titolare di questo Telefono</div>
+          <div class="segmented-2">
+            <button id="optOwnerLeoBtn" class="seg-btn" onclick="selectPhoneOwner('leonardo')">
+              👨🏻 Leonardo (Uomo)
+            </button>
+            <button id="optOwnerVitaBtn" class="seg-btn" onclick="selectPhoneOwner('vitalucia')">
+              👩🏻 Vita Lucia (Donna)
+            </button>
+          </div>
+        </div>
+
+        <!-- Estensioni Attivabili / Disattivabili -->
+        <div class="option-group">
+          <div class="option-group-title">🧩 Estensioni (Attiva solo ciò che ti serve)</div>
+          <p class="option-group-hint">Disattiva le funzioni che non usi per mantenere la schermata pulita e semplice.</p>
+
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-title">🍲 Mostra anche Dosi "Pentola per 2"</div>
+              <div class="toggle-sub">Aggiunge la somma Leonardo + Vita quando cucinate insieme</div>
+            </div>
+            <input type="checkbox" id="chkCookTogether" class="toggle-checkbox" onchange="toggleCookTogetherMode(this.checked)" />
+          </label>
+
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-title">🔊 Lettura Vocale Ricette in Cucina</div>
+              <div class="toggle-sub">Pulsante per ascoltare pesi e procedimento a voce</div>
+            </div>
+            <input type="checkbox" id="chkExtVoice" class="toggle-checkbox" onchange="toggleExtension('showVoiceAssistant', this.checked)" />
+          </label>
+
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-title">⚖️ Riepilogo Giornaliero Olio e Pane</div>
+              <div class="toggle-sub">Mostra il totale giornaliero di Olio EVO, Pane e Sale</div>
+            </div>
+            <input type="checkbox" id="chkExtTotals" class="toggle-checkbox" onchange="toggleExtension('showDailyTotalsBox', this.checked)" />
+          </label>
+
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-title">🔄 Scambia Giornate della Settimana</div>
+              <div class="toggle-sub">Permette di invertire il menu di due giorni</div>
+            </div>
+            <input type="checkbox" id="chkExtSwap" class="toggle-checkbox" onchange="toggleExtension('showSwapDays', this.checked)" />
+          </label>
+
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-title">🍕 Guida "Pizza del Sabato Sera"</div>
+              <div class="toggle-sub">Consigli pizza e idratazione anti-sodio del weekend</div>
+            </div>
+            <input type="checkbox" id="chkExtPizza" class="toggle-checkbox" onchange="toggleExtension('showPizzaGuide', this.checked)" />
+          </label>
+
+          <label class="toggle-row">
+            <div>
+              <div class="toggle-title">🩺 Diario Sintomi (Energia &amp; Gonfiore)</div>
+              <div class="toggle-sub">Registrazione rapida digestione per il Dott. Pastoressa</div>
+            </div>
+            <input type="checkbox" id="chkExtSymptoms" class="toggle-checkbox" onchange="toggleExtension('showSymptomsTracker', this.checked)" />
+          </label>
+
+          <!-- VISIBILE SOLO SE IL TELEFONO È DI VITA LUCIA (DONNA) -->
+          <label id="extCycleTrackerRow" class="toggle-row hidden">
+            <div>
+              <div class="toggle-title">🌸 Calendario Ciclo &amp; Regolarità</div>
+              <div class="toggle-sub">Calcolo inizio/fine ciclo, regolarità e avviso automatico</div>
+            </div>
+            <input type="checkbox" id="chkExtCycle" class="toggle-checkbox" onchange="toggleExtension('showCycleTracker', this.checked)" />
+          </label>
+        </div>
+
+        <!-- Stanza Condivisione Partner & Aggiornamento Rapido -->
+        <div class="option-group">
+          <div class="option-group-title">📲 Aggiorna il Telefono di Vita Lucia / Partner</div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+            <button class="btn-primary" style="width:100%;" onclick="shareUpdateLinkWhatsApp()">
+              💬 Invia Link Aggiornamento v5.0 su WhatsApp
+            </button>
+            <button class="btn-secondary" style="width:100%;" onclick="forceHardReloadApp()">
+              🔄 Pulisci Cache e Ricarica App v5.0
+            </button>
+          </div>
+          <div class="option-group-title">🔗 Codice Condivisione col Telefono del Partner</div>
+          <div style="display:flex; gap:8px;">
+            <input id="coupleSyncCodeInput" type="text" class="input-field" value="LEO-VITA-72021" style="font-family:monospace;" />
+            <button class="btn-primary" onclick="updateSyncRoom()">Salva</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICA STILE WHATSAPP IN ARRIVO DAL PARTNER -->
+  <div id="whatsappChatBanner" class="wa-banner hidden">
+    <div class="wa-banner-left" onclick="openChatFromBanner()">
+      <div class="wa-icon">💬</div>
+      <div>
+        <div id="waBannerSender" class="wa-sender">Messaggio da Vita Lucia</div>
+        <div id="waBannerText" class="wa-text">...</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <button class="wa-reply-btn" onclick="openChatFromBanner()">Rispondi</button>
+      <button class="wa-close-btn" onclick="closeWhatsappBanner()">✕</button>
+    </div>
+  </div>
+
+  <!-- BARRA FLOTTANTE TIMER COTTURA -->
+  <div id="cookingTimerBar" class="floating-pill-bar hidden">
+    <span>⏲️ <span id="cookingTimerLabel">Cottura</span>: <strong id="cookingTimerCountdown">00:00</strong></span>
+    <button onclick="stopCookingTimer()" class="floating-close-btn">✕</button>
+  </div>
+
+  <!-- BARRA FLOTTANTE VOCE CUCINA -->
+  <div id="voiceAssistantBar" class="floating-pill-bar voice-bar hidden">
+    <span>🔊 <span id="voiceAssistantLabel">Lettura ricetta...</span></span>
+    <button onclick="stopKitchenVoice()" class="floating-close-btn">⏹️ Stop</button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CONTENITORE PRINCIPALE MOBILE                                         -->
+  <!-- ===================================================================== -->
+  <div class="app-shell">
+    <!-- INTESTAZIONE PULITA E SIGNORILE -->
+    <header class="top-header">
+      <div class="brand-group">
+        <div id="ownerHeaderAvatar" class="brand-logo">👨🏻</div>
+        <div class="brand-title">
+          <h1 id="ownerHeaderTitle">Piano di Leonardo</h1>
+          <div id="liveCalendarHeaderText" class="brand-subtitle">
+            📅 Mercoledì 4 Nov 2026
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="themeToggleBtn" class="header-icon-btn" onclick="toggleThemeMode()" title="Cambia Tema Bianca / Notte">
+          🌙
+        </button>
+        <button class="options-pill-btn" onclick="openOptionsModal()">
+          ⚙️ Opzioni
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- WIDGET CONTROLLO TOTALE SEMPRE ATTIVO (In-App + Barra Blocco Telefono)-->
+    <!-- ===================================================================== -->
+    <section id="liveControlWidget" class="live-widget-card">
+      <div class="lw-top-row">
+        <div class="lw-title-group">
+          <span class="lw-dot"></span>
+          <span id="lwOwnerSummary">Il Tuo Controllo di Oggi</span>
+        </div>
+        <button class="lw-pin-btn" onclick="pinSystemNotificationWidget()">
+          📌 Fissa su Schermo Telefono
+        </button>
+      </div>
+
+      <div class="lw-metrics-grid">
+        <div class="lw-metric-box" onclick="switchTab('oggi')">
+          <div class="lw-metric-val" id="lwMealsVal">0 / 5</div>
+          <div class="lw-metric-lbl">🍽️ Pasti Fatti</div>
+          <div class="lw-mini-bar"><div id="lwMealsBar" class="lw-mini-fill" style="width:0%"></div></div>
+        </div>
+        <div class="lw-metric-box" onclick="switchTab('acqua')">
+          <div class="lw-metric-val" id="lwWaterVal">0.0 / 2.0 L</div>
+          <div class="lw-metric-lbl">💧 Acqua Bevuta</div>
+          <div class="lw-mini-bar"><div id="lwWaterBar" class="lw-mini-fill sky" style="width:0%"></div></div>
+        </div>
+        <div class="lw-metric-box" onclick="switchTab('progressi')">
+          <div class="lw-metric-val" id="lwNextVal">08:00</div>
+          <div class="lw-metric-lbl" id="lwNextLbl">⏰ Prossimo Step</div>
+        </div>
+      </div>
+
+      <!-- Stato Condiviso del Partner dentro il Widget -->
+      <div id="partnerLiveBanner" class="lw-partner-row">
+        <div class="partner-status-left">
+          <span id="partnerAvatar">👩🏻</span>
+          <strong id="partnerNameLabel">Vita Lucia:</strong>
+          <span id="partnerStatsInline">0/5 pasti • 0.0L acqua</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="partner-nudge-mini" onclick="sendPartnerNudge('water')">💧 Acqua</button>
+          <button class="partner-nudge-mini" onclick="switchTab('progressi')">💬 Chat</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SCHEDA 1: OGGI (DOMANDA AUTOMATICA + BARRA RAPIDA + PASTI PULITI)   -->
+    <!-- =================================================================== -->
+    <main id="tab-oggi" class="tab-view">
+
+      <!-- DOMANDA INTERATTIVA AUTOMATICA DELL'ORA ("Ore 09:00: hai fatto Colazione? SÌ / NO") -->
+      <section id="smartTimeQuestionCard" class="smart-question-card"></section>
+
+      <!-- BARRA PROGRESSI RAPIDI GIORNATA (Spunta in 1 tocco senza cercare!) -->
+      <section class="quick-check-section">
+        <div class="quick-check-header">
+          <span>⚡ Segna Rapido Oggi</span>
+          <span id="quickCheckSummaryLabel" class="quick-check-count">0/5 pasti • 0.0/2L</span>
+        </div>
+        <div id="quickDailyCheckStrip" class="quick-check-grid"></div>
+      </section>
+
+      <!-- SELETTORE 7 GIORNI DEL CALENDARIO -->
+      <div id="daySelectorStrip" class="day-strip"></div>
+
+      <!-- INTESTAZIONE GIORNATA CORRENTE -->
+      <div class="day-title-bar">
+        <div>
+          <h2 id="currentDayTitle" class="day-main-heading">Oggi</h2>
+          <div id="currentDayTheme" class="day-sub-theme"></div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button id="jumpToTodayBtn" class="btn-outline-small hidden" onclick="jumpToRealToday()">
+            📍 Oggi
+          </button>
+          <button id="swapDaysToggleBtn" class="btn-outline-small hidden" onclick="toggleSwapDayBox()">
+            🔄 Inverti
+          </button>
+        </div>
+      </div>
+
+      <!-- PANNELLO INVERTI GIORNATE (Mostrato solo se attivato in Opzioni) -->
+      <div id="swapDaysPanel" class="card-surface hidden">
+        <div class="card-section-title">🔄 Inverti due giornate della settimana</div>
+        <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; margin:10px 0;">
+          <select id="swapDayA" class="choice-select"></select>
+          <span style="font-weight:800;">⇄</span>
+          <select id="swapDayB" class="choice-select"></select>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" onclick="executeDaySwap()" style="flex:1;">Conferma Scambio</button>
+          <button class="btn-secondary" onclick="resetDayOrder()">Ripristina</button>
+        </div>
+      </div>
+
+      <!-- RIEPILOGO OLIO/PANE/SALE DEL GIORNO (Opzionale da Opzioni) -->
+      <div id="dailyTotalsRigorousBox" class="card-surface hidden"></div>
+
+      <!-- PROMEMORIA PREPARAZIONE / AMMOLLO SERALE (Compatto a fisarmonica) -->
+      <details class="clean-accordion">
+        <summary class="clean-accordion-summary">
+          <span>👩‍🍳 Cosa preparare oggi e stasera</span>
+          <span id="nextMealCountdown" class="accordion-badge"></span>
+        </summary>
+        <div class="clean-accordion-body">
+          <ul id="prepTodayList" class="prep-list"></ul>
+          <div id="prepTomorrowBox" class="prep-tomorrow"></div>
+        </div>
+      </details>
+
+      <!-- ELENCO DEI 5 PASTI DEL GIORNO (Grandi, chiari e ordinati) -->
+      <div id="mealsContainer" class="meals-stack"></div>
+
+      <!-- ESTENSIONE OPZIONALE: PIZZA DEL SABATO SERA -->
+      <div id="saturdayPizzaSmartBox" class="card-surface hidden"></div>
+
+      <!-- ESTENSIONE OPZIONALE: SINTOMI & CICLO (Ciclo solo per Vita Lucia) -->
+      <div id="dailyClinicalTrackerCard" class="card-surface hidden"></div>
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- SCHEDA 2: ACQUA 2 LITRI & ORARI SVEGLIE                             -->
+    <!-- =================================================================== -->
+    <main id="tab-acqua" class="tab-view hidden">
+      <div class="card-surface water-main-card">
+        <div class="modal-badge">IDRATAZIONE GIORNALIERA (MINIMO 2 LITRI)</div>
+        <div id="waterBigDisplay" class="water-big-number">0 / 2000 ml</div>
+        <div id="waterStatusSub" class="water-sub-text">Obiettivo: 8 bicchieri da 250 ml</div>
+
+        <div class="progress-track" style="margin:14px 0;">
+          <div id="waterMainProgressBar" class="progress-fill" style="width:0%;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1.2fr 1fr auto; gap:8px; margin-bottom:16px;">
+          <button class="btn-primary" onclick="addWater(250)">+1 Bicchiere (250ml)</button>
+          <button class="btn-secondary" onclick="addWater(500)">+500 ml</button>
+          <button class="btn-secondary" onclick="addWater(-250)">-250</button>
+        </div>
+
+        <div id="glassesGrid" class="glasses-grid"></div>
+      </div>
+
+      <!-- REGOLAZIONE ORARI PASTI E SVEGLIE -->
+      <div class="card-surface">
+        <div class="card-header-flex">
+          <h3 class="card-section-title">⏰ Orari Domande &amp; Sveglie</h3>
+          <button class="btn-outline-small" onclick="requestNotificationPermission()">Attiva Avvisi</button>
+        </div>
+        <p class="card-helper-text">
+          A questi orari l'app ti chiederà: <b>"Hai fatto colazione / pranzo?"</b> con spunta automatica.
+        </p>
+
+        <div class="time-settings-list">
+          <div class="time-row"><span>☕ Colazione</span><input type="time" id="time-colazione" class="time-input" value="08:00" onchange="saveMealTimes()" /></div>
+          <div class="time-row"><span>🥜 Spuntino Mattina</span><input type="time" id="time-spuntino" class="time-input" value="11:00" onchange="saveMealTimes()" /></div>
+          <div class="time-row"><span>🍝 Pranzo</span><input type="time" id="time-pranzo" class="time-input" value="14:00" onchange="saveMealTimes()" /></div>
+          <div class="time-row"><span>🍎 Merenda</span><input type="time" id="time-merenda" class="time-input" value="17:00" onchange="saveMealTimes()" /></div>
+          <div class="time-row"><span>🍗 Cena</span><input type="time" id="time-cena" class="time-input" value="20:30" onchange="saveMealTimes()" /></div>
+          <div class="time-row"><span>🌙 Promemoria Serale</span><input type="time" id="time-prepSerale" class="time-input" value="21:30" onchange="saveMealTimes()" /></div>
+          <div class="time-row">
+            <span>🎵 Suoneria Sveglia</span>
+            <select id="alarmToneSelect" class="choice-select" style="width:auto;" onchange="saveMealTimes()">
+              <option value="energetic">🔔 Classica</option>
+              <option value="melody">🎶 Melodia Dolce</option>
+              <option value="urgent">🚨 Intensa</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-secondary" style="width:100%; margin-top:12px;" onclick="triggerContinuousAlarm('☕ Sono le 08:00: hai fatto Colazione?', 'Premi SÌ per spuntare automaticamente la colazione di oggi!', { type: 'meal', mealKey: 'colazione' })">
+          🔔 Prova Domanda con Sveglia Ora
+        </button>
+      </div>
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- SCHEDA 3: SPESA GIORNALIERA CONDIVISA COL CALENDARIO                -->
+    <!-- =================================================================== -->
+    <main id="tab-spesa" class="tab-view hidden">
+      <div class="card-surface">
+        <div class="card-header-flex">
+          <div>
+            <h2 class="card-section-title" style="margin:0;">🛒 Lista della Spesa Condivisa</h2>
+            <div id="shoppingCalendarSubtitle" class="card-helper-text" style="margin:2px 0 0;"></div>
+          </div>
+          <button class="btn-outline-small" onclick="resetShoppingList()">Azzera Spunte</button>
+        </div>
+
+        <div class="segmented-3" style="margin:12px 0;">
+          <button id="shopViewTodayBtn" class="seg-btn active" onclick="setShoppingViewMode('today_tomorrow')">📍 Oggi/Domani</button>
+          <button id="shopViewDayBtn" class="seg-btn" onclick="setShoppingViewMode('day')">📅 Giorni</button>
+          <button id="shopViewCatBtn" class="seg-btn" onclick="setShoppingViewMode('category')">🏪 Reparti</button>
+        </div>
+
+        <div id="shopDayFilterStrip" class="day-strip hidden" style="margin-bottom:12px;"></div>
+
+        <div style="display:flex; gap:8px;">
+          <input id="customShopInput" type="text" class="input-field" placeholder="Aggiungi prodotto (es. Acqua, Limoni...)" />
+          <button class="btn-primary" onclick="addCustomShopItem()">+ Aggiungi</button>
+        </div>
+      </div>
+
+      <div id="shoppingContainer"></div>
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- SCHEDA 4: PERCORSO, PESO, MOVIMENTO & COMUNICAZIONE                 -->
+    <!-- =================================================================== -->
+    <main id="tab-progressi" class="tab-view hidden">
+      <!-- DIARIO PESO PERSONALE E VITTORIA DI COPPIA -->
+      <div class="card-surface">
+        <div class="card-header-flex">
+          <h2 class="card-section-title" style="margin:0;">⚖️ Il Tuo Percorso &amp; Peso</h2>
+          <span id="journeyDaysBadge" class="accordion-badge">Giorno 1</span>
+        </div>
+
+        <div id="selfEsteemMotivationQuote" class="editorial-quote">
+          "La costanza quotidiana è il segreto del risultato."
+        </div>
+
+        <div class="weight-summary-grid">
+          <div class="weight-stat-box">
+            <div id="wStartVal" class="val">-- kg</div>
+            <div class="lbl">Peso Iniziale</div>
+          </div>
+          <div class="weight-stat-box">
+            <div id="wCurrentVal" class="val">-- kg</div>
+            <div class="lbl">Peso Attuale</div>
+          </div>
+          <div class="weight-stat-box">
+            <div id="wDiffVal" class="val">0.0 kg</div>
+            <div class="lbl">Risultato</div>
+          </div>
+        </div>
+
+        <div id="weightRetentionAlertBox" style="margin-bottom:10px;"></div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-top:10px;">
+          <input id="newWeightInput" type="number" step="0.1" class="input-field" placeholder="Tuo Peso (kg)" />
+          <input id="goalWeightInput" type="number" step="0.1" class="input-field" placeholder="Obiettivo (kg)" />
+          <button class="btn-primary" onclick="addWeightLog()">Salva</button>
+        </div>
+
+        <div id="weightChartBox" style="margin-top:12px;"></div>
+        <div id="weightHistoryList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;"></div>
+
+        <!-- Riepilogo Coppia Semplice -->
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-subtle);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-weight:700; font-size:0.9rem;">💑 Risultato di Coppia</span>
+            <strong id="coupleTotalLostDisplay" style="color:var(--accent-emerald);">0.0 kg persi</strong>
+          </div>
+          <div id="coupleComparisonRow" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- MOVIMENTO, PASSI & SPORT -->
+      <div class="card-surface">
+        <div class="card-header-flex">
+          <h3 class="card-section-title" style="margin:0;">👟 Passi &amp; Attività Fisica</h3>
+          <span id="pedometerStatusBadge" class="accordion-badge">Pronto</span>
+        </div>
+
+        <div class="weight-summary-grid" style="margin:10px 0;">
+          <div class="weight-stat-box">
+            <div id="todayStepsVal" class="val">0</div>
+            <div class="lbl">Passi Oggi</div>
+          </div>
+          <div class="weight-stat-box">
+            <div id="todayKmVal" class="val">0.0 km</div>
+            <div class="lbl">Distanza</div>
+          </div>
+          <div class="weight-stat-box">
+            <div id="todayKcalVal" class="val">0 kcal</div>
+            <div class="lbl">Bruciate</div>
+          </div>
+        </div>
+
+        <button id="togglePedometerBtn" class="btn-secondary" style="width:100%; margin-bottom:10px;" onclick="togglePhonePedometer()">
+          📲 Attiva Contapassi del Telefono
+        </button>
+
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <input id="manualStepsInput" type="number" class="input-field" placeholder="Oppure inserisci passi da Smartwatch" />
+          <button class="btn-primary" onclick="syncSmartwatchSteps()">Salva</button>
+        </div>
+
+        <details class="clean-accordion" style="margin-bottom:0;">
+          <summary class="clean-accordion-summary">🏋️‍♂️ Aggiungi Sport o Camminata</summary>
+          <div class="clean-accordion-body">
+            <select id="sportTypeSelect" class="choice-select" style="margin-bottom:8px;"></select>
+            <div style="display:flex; gap:8px;">
+              <input id="sportMinutesInput" type="number" class="input-field" placeholder="Minuti (es. 30)" />
+              <button class="btn-primary" onclick="addSportActivity()">+ Aggiungi</button>
+            </div>
+            <div id="todaySportLogsList" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- CHAT CON PARTNER & REPORT DOTT. PASTORESSA -->
+      <div class="card-surface">
+        <h3 class="card-section-title">💬 Messaggi col Partner</h3>
+        <div id="coupleChatMessagesBox" class="chat-box"></div>
+        <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px;">
+          <button class="btn-outline-small" onclick="sendQuickChatMsg('💧 Beviamo un bicchiere d\'acqua!')">💧 Beviamo acqua</button>
+          <button class="btn-outline-small" onclick="sendQuickChatMsg('🛒 Sono a fare la spesa!')">🛒 Sono alla spesa</button>
+          <button class="btn-outline-small" onclick="sendQuickChatMsg('👩‍🍳 È quasi pronto a tavola!')">👩‍🍳 È pronto</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input id="coupleChatInput" type="text" class="input-field" placeholder="Scrivi messaggio..." onkeydown="if(event.key==='Enter') sendCoupleChatMessage()" />
+          <button class="btn-primary" onclick="sendCoupleChatMessage()">Invia</button>
+        </div>
+      </div>
+
+      <div class="card-surface">
+        <h3 class="card-section-title">👨‍⚕️ Note &amp; Report per Dott. Andrea Pastoressa</h3>
+        <div id="doctorNotesList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;"></div>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <input id="doctorNoteInput" type="text" class="input-field" placeholder="Segna domanda o nota per il Dottore..." />
+          <button class="btn-secondary" onclick="addDoctorNote()">Salva</button>
+        </div>
+        <button class="btn-primary" style="width:100%;" onclick="sendDoctorReportWhatsApp()">
+          📲 Invia Report Settimanale su WhatsApp al Dottore
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- BARRA DI NAVIGAZIONE INFERIORE GRANDE E CHIARA A 4 SCHEDE -->
+  <nav class="bottom-nav" aria-label="Menu principale">
+    <div class="bottom-nav-inner">
+      <button class="nav-tab active" data-tab="oggi" onclick="switchTab('oggi')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Oggi</span>
+      </button>
+      <button class="nav-tab" data-tab="acqua" onclick="switchTab('acqua')">
+        <span class="nav-icon">💧</span>
+        <span class="nav-label">Acqua</span>
+      </button>
+      <button class="nav-tab" data-tab="spesa" onclick="switchTab('spesa')">
+        <span class="nav-icon">🛒</span>
+        <span class="nav-label">Spesa</span>
+      </button>
+      <button class="nav-tab" data-tab="progressi" onclick="switchTab('progressi')">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Percorso</span>
+      </button>
+    </div>
+  </nav>
+
+  <script src="./data.js?v=5.0"></script>
+  <script src="./app.js?v=5.0"></script>
+</body>
+</html>

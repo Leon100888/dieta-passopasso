@@ -1,0 +1,6 @@
+cloudflared.exe
+apk-extracted*
+*.zip
+*.apk
+node_modules
+.DS_Store

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+  <!-- Leaf / Apple shape -->
+  <path d="M256 130 C200 130 140 175 140 255 C140 340 205 400 256 400 C307 400 372 340 372 255 C372 175 312 130 256 130 Z" fill="#ffffff" opacity="0.95"/>
+  <!-- Leaf on top -->
+  <path d="M256 125 C256 90 295 70 330 75 C325 110 290 130 256 125 Z" fill="#a7f3d0"/>
+  <!-- Water drop inside -->
+  <path d="M256 190 C256 190 208 250 208 286 C208 313 229 334 256 334 C283 334 304 313 304 286 C304 250 256 190 256 190 Z" fill="#0ea5e9"/>
+  <!-- Checkmark inside drop -->
+  <path d="M236 286 L250 300 L278 268" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

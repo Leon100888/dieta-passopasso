@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.pastoressa.dietapassopasso",
+        "sha256_cert_fingerprints": ["A2:CD:91:06:A4:7E:B0:AE:66:39:B8:B3:48:08:26:3D:37:84:93:69:02:94:93:CD:B5:93:54:0E:76:D6:56:71"]
+      }
+    }]
