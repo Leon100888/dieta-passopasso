@@ -282,9 +282,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (params.get('quickWater') === '1') {
     setTimeout(() => addWater(250), 300);
   }
-  if (params.get('admin') === '1') {
-    setTimeout(() => openAdminStudioModal(), 350);
+  if (params.get('admin') === '1' || params.get('studio') === '1') {
+    setTimeout(() => promptStudioPassword(), 350);
   }
+
+  checkStudioVisibility();
+  window.addEventListener('resize', checkStudioVisibility);
 
   initMealTimeInputs();
   initSwapSelectors();
@@ -2808,11 +2811,106 @@ function showToast(message) {
 }
 
 // ============================================================================
-// 11. STUDIO NUTRIZIONALE: AUTO-LETTURA PDF & GESTIONE PAZIENTI
+// 11. STUDIO NUTRIZIONALE: ACCESSO PROTETTO DA PASSWORD (SOLO PC / MEDICO)
 // ============================================================================
 let currentParsedDietData = null;
 
-function openAdminStudioModal() {
+const STUDIO_VALID_PASSWORDS = ['dottore2026', 'pastoressa', 'admin'];
+
+function isStudioAuthenticated() {
+  return sessionStorage.getItem('dieta_studio_session_auth') === 'true';
+}
+
+function checkStudioVisibility() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPatientParam = urlParams.has('paziente') || urlParams.has('p');
+  const isAdminParam = urlParams.get('admin') === '1' || urlParams.get('studio') === '1';
+  const isDesktopPc = window.innerWidth >= 900 && !('ontouchstart' in window);
+  const isRememberedAdminDevice = localStorage.getItem('dieta_is_admin_device') === 'true';
+
+  const btn = document.getElementById('adminStudioBtn');
+  const optionsAdminSection = document.getElementById('adminOptionsSection');
+
+  // Regola ferrea: se il link inviato è di un paziente, nascondi TUTTO l'accesso allo studio!
+  if (isPatientParam) {
+    if (btn) btn.classList.add('hidden');
+    if (optionsAdminSection) optionsAdminSection.classList.add('hidden');
+    return;
+  }
+
+  // Se è un PC desktop o un dispositivo autorizzato
+  const shouldShowBtn = isDesktopPc || isRememberedAdminDevice || isAdminParam;
+  if (btn) {
+    btn.classList.toggle('hidden', !shouldShowBtn);
+  }
+  if (optionsAdminSection) {
+    optionsAdminSection.classList.remove('hidden');
+  }
+}
+
+function promptStudioPassword() {
+  if (isStudioAuthenticated()) {
+    openAdminStudioModal(true);
+    return;
+  }
+  const modal = document.getElementById('studioPasswordModal');
+  const input = document.getElementById('studioPasswordInput');
+  const err = document.getElementById('studioPasswordError');
+  if (input) input.value = '';
+  if (err) err.classList.add('hidden');
+  if (modal) modal.classList.remove('hidden');
+  setTimeout(() => input?.focus(), 150);
+}
+
+function closeStudioPasswordModal() {
+  document.getElementById('studioPasswordModal')?.classList.add('hidden');
+}
+
+function verifyStudioPassword() {
+  const input = document.getElementById('studioPasswordInput');
+  const err = document.getElementById('studioPasswordError');
+  const val = (input?.value || '').trim();
+
+  const customPass = appState.studioPassword;
+  const isMatch = STUDIO_VALID_PASSWORDS.includes(val.toLowerCase()) || (customPass && val === customPass);
+
+  if (isMatch) {
+    sessionStorage.setItem('dieta_studio_session_auth', 'true');
+    localStorage.setItem('dieta_is_admin_device', 'true');
+    closeStudioPasswordModal();
+    checkStudioVisibility();
+    openAdminStudioModal(true);
+    showToast('🔓 Accesso Studio Medico autorizzato!');
+  } else {
+    if (err) err.classList.remove('hidden');
+    if (input) {
+      input.classList.add('input-error');
+      setTimeout(() => input.classList.remove('input-error'), 800);
+      input.select();
+    }
+    showToast('❌ Password errata. Accesso negato.');
+  }
+}
+
+function togglePasswordVisibility(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  if (btnEl) btnEl.textContent = isPass ? '🙈' : '👁️';
+}
+
+function lockStudioSession() {
+  sessionStorage.removeItem('dieta_studio_session_auth');
+  closeAdminStudioModal();
+  showToast('🔒 Studio Medico bloccato con successo. Dati protetti!');
+}
+
+function openAdminStudioModal(fromAuthorized = false) {
+  if (!fromAuthorized && !isStudioAuthenticated()) {
+    promptStudioPassword();
+    return;
+  }
   document.getElementById('adminStudioModal')?.classList.remove('hidden');
   renderStudioPatientsList();
 }

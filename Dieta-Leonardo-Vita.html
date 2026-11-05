@@ -1547,6 +1547,21 @@ body {
   transition: all 0.2s ease;
 }
 
+.admin-pill-btn.hidden {
+  display: none !important;
+}
+
+.input-error {
+  border-color: var(--accent-rose) !important;
+  animation: shakeInput 0.3s ease;
+}
+
+@keyframes shakeInput {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
 .admin-pill-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(200, 160, 89, 0.25);
@@ -2152,6 +2167,57 @@ body {
             <button class="btn-primary" onclick="updateSyncRoom()">Salva</button>
           </div>
         </div>
+
+        <!-- Area Riservata Medico / Amministratore (Protetta da Password) -->
+        <div id="adminOptionsSection" class="option-group" style="border: 1.5px dashed var(--accent-gold); background: rgba(200, 160, 89, 0.05); border-radius: 14px; padding: 14px; margin-top: 14px;">
+          <div class="option-group-title" style="color: var(--accent-gold); display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span>🔐 Studio Medico Nutrizionale</span>
+            <span style="font-size: 0.72rem; font-weight: 800; background: rgba(200, 160, 89, 0.2); padding: 2px 8px; border-radius: 99px;">RISERVATO PC / MEDICO</span>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.45;">
+            Accesso protetto alla gestione dei pazienti, auto-lettura PDF clinici del Dottore e invio piani nutrizionali.
+          </p>
+          <button class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #c8a059, #b48c45); border: none; font-weight: 800;" onclick="closeOptionsModal(); promptStudioPassword();">
+            🔐 Sblocca Studio con Password
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL AUTENTICAZIONE PASSWORD STUDIO MEDICO                          -->
+  <!-- ===================================================================== -->
+  <div id="studioPasswordModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 420px; text-align: center; border: 2px solid var(--accent-gold);">
+      <div style="font-size: 3rem; margin-bottom: 6px;">🔐</div>
+      <div class="modal-badge" style="background: rgba(200, 160, 89, 0.2); color: var(--accent-gold); margin: 0 auto 8px auto;">AREA RISERVATA MEDICO</div>
+      <h2 class="modal-title" style="font-size: 1.35rem; margin-top: 4px;">Accesso Studio Nutrizionale</h2>
+      <p class="modal-subtitle" style="font-size: 0.84rem; margin-bottom: 16px; line-height: 1.45;">
+        Questa sezione è riservata all'amministrazione.<br/>
+        Inserisci la password per consultare i clienti o caricare nuove diete.
+      </p>
+
+      <div style="position: relative; margin-bottom: 14px;">
+        <input type="password" id="studioPasswordInput" class="input-field" placeholder="Inserisci Password..." style="width: 100%; box-sizing: border-box; text-align: center; font-size: 1.15rem; letter-spacing: 2px; padding-right: 42px;" onkeydown="if(event.key==='Enter') verifyStudioPassword()" />
+        <button type="button" onclick="togglePasswordVisibility('studioPasswordInput', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.2rem; cursor: pointer; opacity: 0.7;" title="Mostra/Nascondi password">👁️</button>
+      </div>
+
+      <div id="studioPasswordError" class="hidden" style="color: var(--accent-rose); font-size: 0.82rem; font-weight: 800; margin-bottom: 12px;">
+        ❌ Password errata. Accesso negato.
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-secondary" style="flex: 1;" onclick="closeStudioPasswordModal()">
+          Annulla
+        </button>
+        <button class="btn-primary" style="flex: 1.4; background: linear-gradient(135deg, #c8a059, #b48c45); border: none; font-weight: 800;" onclick="verifyStudioPassword()">
+          Sblocca Studio
+        </button>
+      </div>
+
+      <div style="margin-top: 14px; font-size: 0.74rem; color: var(--text-secondary); opacity: 0.8;">
+        💡 Password predefinita: <code>dottore2026</code>
       </div>
     </div>
   </div>
@@ -2169,7 +2235,12 @@ body {
             Auto-lettura PDF del Dottore, creazione automatica dell'app e gestione clienti.
           </p>
         </div>
-        <button class="modal-close-btn" onclick="closeAdminStudioModal()">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn-secondary" style="padding:6px 12px; font-size:0.76rem; font-weight:800; border-color:var(--accent-rose); color:var(--accent-rose); background:rgba(239,68,68,0.08);" onclick="lockStudioSession()" title="Blocca ed esci dallo Studio">
+            🔒 Blocca ed Esci
+          </button>
+          <button class="modal-close-btn" onclick="closeAdminStudioModal()">✕</button>
+        </div>
       </div>
 
       <!-- Schede Studio -->
@@ -2392,8 +2463,8 @@ body {
       </div>
 
       <div class="header-actions">
-        <button class="admin-pill-btn" onclick="openAdminStudioModal()" title="Studio Pazienti & Auto-Lettura PDF">
-          🩺 Studio
+        <button id="adminStudioBtn" class="admin-pill-btn hidden" onclick="promptStudioPassword()" title="Studio Pazienti & Auto-Lettura PDF (Riservato Medico)">
+          🔐 Studio
         </button>
         <button id="themeToggleBtn" class="header-icon-btn" onclick="toggleThemeMode()" title="Cambia Tema Bianca / Notte">
           🌙
@@ -4215,9 +4286,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (params.get('quickWater') === '1') {
     setTimeout(() => addWater(250), 300);
   }
-  if (params.get('admin') === '1') {
-    setTimeout(() => openAdminStudioModal(), 350);
+  if (params.get('admin') === '1' || params.get('studio') === '1') {
+    setTimeout(() => promptStudioPassword(), 350);
   }
+
+  checkStudioVisibility();
+  window.addEventListener('resize', checkStudioVisibility);
 
   initMealTimeInputs();
   initSwapSelectors();
@@ -6741,11 +6815,106 @@ function showToast(message) {
 }
 
 // ============================================================================
-// 11. STUDIO NUTRIZIONALE: AUTO-LETTURA PDF & GESTIONE PAZIENTI
+// 11. STUDIO NUTRIZIONALE: ACCESSO PROTETTO DA PASSWORD (SOLO PC / MEDICO)
 // ============================================================================
 let currentParsedDietData = null;
 
-function openAdminStudioModal() {
+const STUDIO_VALID_PASSWORDS = ['dottore2026', 'pastoressa', 'admin'];
+
+function isStudioAuthenticated() {
+  return sessionStorage.getItem('dieta_studio_session_auth') === 'true';
+}
+
+function checkStudioVisibility() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPatientParam = urlParams.has('paziente') || urlParams.has('p');
+  const isAdminParam = urlParams.get('admin') === '1' || urlParams.get('studio') === '1';
+  const isDesktopPc = window.innerWidth >= 900 && !('ontouchstart' in window);
+  const isRememberedAdminDevice = localStorage.getItem('dieta_is_admin_device') === 'true';
+
+  const btn = document.getElementById('adminStudioBtn');
+  const optionsAdminSection = document.getElementById('adminOptionsSection');
+
+  // Regola ferrea: se il link inviato è di un paziente, nascondi TUTTO l'accesso allo studio!
+  if (isPatientParam) {
+    if (btn) btn.classList.add('hidden');
+    if (optionsAdminSection) optionsAdminSection.classList.add('hidden');
+    return;
+  }
+
+  // Se è un PC desktop o un dispositivo autorizzato
+  const shouldShowBtn = isDesktopPc || isRememberedAdminDevice || isAdminParam;
+  if (btn) {
+    btn.classList.toggle('hidden', !shouldShowBtn);
+  }
+  if (optionsAdminSection) {
+    optionsAdminSection.classList.remove('hidden');
+  }
+}
+
+function promptStudioPassword() {
+  if (isStudioAuthenticated()) {
+    openAdminStudioModal(true);
+    return;
+  }
+  const modal = document.getElementById('studioPasswordModal');
+  const input = document.getElementById('studioPasswordInput');
+  const err = document.getElementById('studioPasswordError');
+  if (input) input.value = '';
+  if (err) err.classList.add('hidden');
+  if (modal) modal.classList.remove('hidden');
+  setTimeout(() => input?.focus(), 150);
+}
+
+function closeStudioPasswordModal() {
+  document.getElementById('studioPasswordModal')?.classList.add('hidden');
+}
+
+function verifyStudioPassword() {
+  const input = document.getElementById('studioPasswordInput');
+  const err = document.getElementById('studioPasswordError');
+  const val = (input?.value || '').trim();
+
+  const customPass = appState.studioPassword;
+  const isMatch = STUDIO_VALID_PASSWORDS.includes(val.toLowerCase()) || (customPass && val === customPass);
+
+  if (isMatch) {
+    sessionStorage.setItem('dieta_studio_session_auth', 'true');
+    localStorage.setItem('dieta_is_admin_device', 'true');
+    closeStudioPasswordModal();
+    checkStudioVisibility();
+    openAdminStudioModal(true);
+    showToast('🔓 Accesso Studio Medico autorizzato!');
+  } else {
+    if (err) err.classList.remove('hidden');
+    if (input) {
+      input.classList.add('input-error');
+      setTimeout(() => input.classList.remove('input-error'), 800);
+      input.select();
+    }
+    showToast('❌ Password errata. Accesso negato.');
+  }
+}
+
+function togglePasswordVisibility(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  if (btnEl) btnEl.textContent = isPass ? '🙈' : '👁️';
+}
+
+function lockStudioSession() {
+  sessionStorage.removeItem('dieta_studio_session_auth');
+  closeAdminStudioModal();
+  showToast('🔒 Studio Medico bloccato con successo. Dati protetti!');
+}
+
+function openAdminStudioModal(fromAuthorized = false) {
+  if (!fromAuthorized && !isStudioAuthenticated()) {
+    promptStudioPassword();
+    return;
+  }
   document.getElementById('adminStudioModal')?.classList.remove('hidden');
   renderStudioPatientsList();
 }
