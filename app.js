@@ -596,9 +596,53 @@ function getNextScheduledMealInfo() {
   return { timeStr: 'Domani', label: '✨ Fine Giornata', key: null };
 }
 
+function toggleFloatingWidget(forceState) {
+  const el = document.getElementById('floatingLiveWidget');
+  if (!el) return;
+  const isHidden = el.classList.contains('hidden');
+  const next = forceState !== undefined ? forceState : isHidden;
+  el.classList.toggle('hidden', !next);
+  appState.floatingWidgetActive = next;
+  saveState(false);
+  if (next) {
+    updateFloatingWidgetDisplay();
+    showToast('📌 Mini-Widget fissato sullo schermo!');
+    if (navigator.vibrate) navigator.vibrate([100, 40, 100]);
+  }
+}
+
+function updateFloatingWidgetDisplay() {
+  const pk = getPrimaryPersonKey();
+  const myData = appState.people[pk];
+  const today = getTodayDateStr();
+  const myMeals = Object.values(myData?.mealsByDate?.[today] || {}).filter(Boolean).length;
+  const myWater = (((myData?.waterByDate?.[today] || 0)) / 1000).toFixed(1);
+  const textEl = document.getElementById('flwSummaryText');
+  if (textEl) {
+    textEl.textContent = `🥗 ${myMeals}/5 pasti • 💧 ${myWater}/2.0L`;
+  }
+}
+
 async function pinSystemNotificationWidget() {
-  if ('Notification' in window && Notification.permission !== 'granted') {
-    await Notification.requestPermission();
+  // Attiva sempre anche il Mini-Widget visivo flottante
+  toggleFloatingWidget(true);
+
+  if (!('Notification' in window)) {
+    showToast('📌 Mini-Widget attivo sullo schermo!');
+    return;
+  }
+
+  if (Notification.permission !== 'granted') {
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        showToast('💡 Mini-Widget attivo! Per vederlo anche nella tendina, tocca "Consenti" notifiche.');
+        return;
+      }
+    } catch (e) {
+      showToast('📌 Mini-Widget attivo sullo schermo!');
+      return;
+    }
   }
   appState.widgetPinned = true;
   saveState(false);
@@ -606,8 +650,8 @@ async function pinSystemNotificationWidget() {
 }
 
 async function updateSystemNotificationWidget(silent = true) {
+  updateFloatingWidgetDisplay();
   if (!('serviceWorker' in navigator) || !('Notification' in window) || Notification.permission !== 'granted') {
-    if (!silent) showToast('🔔 Attiva i permessi notifiche per fissare il Widget sulla barra del telefono!');
     return;
   }
   try {
@@ -619,31 +663,33 @@ async function updateSystemNotificationWidget(silent = true) {
     const partnerData = appState.people[partnerKey];
     const today = getTodayDateStr();
 
-    const myMeals = Object.values(myData.mealsByDate[today] || {}).filter(Boolean).length;
-    const myWater = myData.waterByDate[today] || 0;
-    const pMeals = Object.values(partnerData.mealsByDate[today] || {}).filter(Boolean).length;
-    const pWater = partnerData.waterByDate[today] || 0;
+    const myMeals = Object.values(myData?.mealsByDate?.[today] || {}).filter(Boolean).length;
+    const myWater = myData?.waterByDate?.[today] || 0;
+    const pMeals = Object.values(partnerData?.mealsByDate?.[today] || {}).filter(Boolean).length;
+    const pWater = partnerData?.waterByDate?.[today] || 0;
     const nextInfo = getNextScheduledMealInfo();
 
     const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification(`🥗 Widget ${myProfile.shortName}: ${myMeals}/5 Pasti • 💧 ${myWater}/2000ml`, {
-      body: `Prossimo: ${nextInfo.label} (${nextInfo.timeStr}) | ${partnerProfile.shortName}: ${pMeals}/5 pasti, ${pWater}ml`,
+    await reg.showNotification(`🥗 Dieta PRO: ${myMeals}/5 Pasti • 💧 ${(myWater / 1000).toFixed(1)}/2.0L`, {
+      body: `Prossimo: ${nextInfo.label} (${nextInfo.timeStr}) | ${partnerProfile.shortName}: ${pMeals}/5, ${(pWater / 1000).toFixed(1)}L`,
       icon: './icon-192.png',
       badge: './icon-192.png',
       tag: 'dieta-live-widget',
       renotify: false,
       silent: true,
       requireInteraction: true,
+      vibrate: [100],
       actions: [
         { action: 'mark_meal', title: '✅ Segna Pasto' },
         { action: 'add_water', title: '💧 +1 Bicchiere' }
       ]
     });
     if (!silent) {
-      showToast('📌 Widget fissato sulla barra notifiche e schermata di blocco del telefono!');
+      showToast('📌 Widget attivato sia sullo schermo che nella tendina notifiche!');
+      if (navigator.vibrate) navigator.vibrate([150, 70, 150]);
     }
   } catch (e) {
-    if (!silent) showToast('📌 Widget attivo in cima alla schermata!');
+    if (!silent) showToast('📌 Mini-Widget attivo sullo schermo!');
   }
 }
 
@@ -2788,6 +2834,28 @@ async function extractTextFromPdf(file) {
   return full;
 }
 
+function handleTargetPatientChange(targetId) {
+  const badge = document.getElementById('targetPatientBadge');
+  if (targetId && targetId !== 'auto') {
+    const p = PROFILES[targetId] || appState.patients?.[targetId];
+    if (badge) {
+      badge.textContent = `AGGIORNAMENTO: ${p?.shortName || targetId}`;
+      badge.style.display = 'inline-block';
+    }
+  } else {
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+function startPatientDietUpdate(patientId) {
+  const select = document.getElementById('studioTargetPatientSelect');
+  if (select) select.value = patientId;
+  handleTargetPatientChange(patientId);
+  switchStudioTab('pdf');
+  const p = PROFILES[patientId] || appState.patients?.[patientId];
+  showToast(`🔄 Trascina ora il nuovo PDF per aggiornare la dieta di ${p?.shortName || patientId}!`);
+}
+
 function parseDietTextWithAI(rawText) {
   if (!rawText || !rawText.trim()) return null;
 
@@ -2816,6 +2884,45 @@ function parseDietTextWithAI(rawText) {
     code = codeMatch[1].trim();
   } else {
     code = 'PZ-' + Math.floor(100000 + Math.random() * 900000);
+  }
+
+  // Rilevamento se è un aggiornamento di un paziente esistente
+  const targetSelect = document.getElementById('studioTargetPatientSelect');
+  const explicitTarget = targetSelect ? targetSelect.value : 'auto';
+
+  let isUpdate = false;
+  let targetPatientId = null;
+
+  if (explicitTarget && explicitTarget !== 'auto') {
+    isUpdate = true;
+    targetPatientId = explicitTarget;
+  } else {
+    // Controllo automatico per codice o nome
+    if (code === '112078' || /leonardo|meo/i.test(name)) {
+      isUpdate = true;
+      targetPatientId = 'leonardo';
+    } else if (code === '112079' || /cinieri|vita|lucia/i.test(name)) {
+      isUpdate = true;
+      targetPatientId = 'vitalucia';
+    } else if (appState.patients) {
+      const match = Object.keys(appState.patients).find((k) => {
+        const p = appState.patients[k];
+        return p.code === code || p.name.toLowerCase() === name.toLowerCase();
+      });
+      if (match) {
+        isUpdate = true;
+        targetPatientId = match;
+      }
+    }
+  }
+
+  if (isUpdate && targetPatientId) {
+    const existingP = PROFILES[targetPatientId] || appState.patients?.[targetPatientId];
+    if (existingP) {
+      name = existingP.name;
+      code = existingP.code;
+      gender = existingP.gender;
+    }
   }
 
   // 4. Estrazione Olio EVO e Sale
@@ -2875,7 +2982,9 @@ function parseDietTextWithAI(rawText) {
   });
 
   return {
-    id: code.toLowerCase().replace(/[^a-z0-9_-]/g, ''),
+    id: (isUpdate && targetPatientId) ? targetPatientId : code.toLowerCase().replace(/[^a-z0-9_-]/g, ''),
+    isUpdate,
+    targetPatientId,
     name,
     code,
     gender,
@@ -2892,6 +3001,23 @@ function renderParsedDietReview(parsed) {
   if (!parsed) return;
   const card = document.getElementById('pdfParsedReviewCard');
   if (!card) return;
+
+  const updateBanner = document.getElementById('reviewUpdateBanner');
+  const cardTitle = document.getElementById('reviewCardTitle');
+
+  if (parsed.isUpdate && parsed.targetPatientId) {
+    const targetP = PROFILES[parsed.targetPatientId] || appState.patients?.[parsed.targetPatientId];
+    if (updateBanner) {
+      updateBanner.innerHTML = `🔄 <b>AGGIORNAMENTO DIETA: ${targetP?.name || parsed.name} (${targetP?.code || parsed.code})</b><br/>Le nuove dosi e i nuovi pasti estratti sostituiranno la vecchia dieta nell'app del paziente in tempo reale, mantenendo intatti lo storico del peso e i giorni consecutivi!`;
+      updateBanner.classList.remove('hidden');
+    }
+    if (cardTitle) {
+      cardTitle.textContent = `🔄 Aggiorna Piano di ${targetP?.shortName || parsed.name}`;
+    }
+  } else {
+    if (updateBanner) updateBanner.classList.add('hidden');
+    if (cardTitle) cardTitle.textContent = `✅ Nuova Dieta Riconosciuta! Controlla e Salva:`;
+  }
 
   document.getElementById('parsedPatientName').value = parsed.name || '';
   document.getElementById('parsedPatientGender').value = parsed.gender || 'M';
@@ -2925,13 +3051,16 @@ function saveParsedPatientToApp(sendWhatsApp = false) {
     return;
   }
 
+  const isUpdate = !!currentParsedDietData.isUpdate;
+  const targetId = currentParsedDietData.targetPatientId;
+
   const nameVal = document.getElementById('parsedPatientName')?.value.trim() || currentParsedDietData.name;
   const genderVal = document.getElementById('parsedPatientGender')?.value || currentParsedDietData.gender;
   const codeVal = document.getElementById('parsedPatientCode')?.value.trim() || currentParsedDietData.code;
   const weightVal = parseFloat(document.getElementById('parsedPatientWeight')?.value) || currentParsedDietData.initialWeight;
   const goalVal = parseFloat(document.getElementById('parsedPatientGoal')?.value) || currentParsedDietData.goalWeight;
 
-  const patientId = codeVal.toLowerCase().replace(/[^a-z0-9_-]/g, '') || ('pz_' + Date.now());
+  const patientId = (isUpdate && targetId) ? targetId : (codeVal.toLowerCase().replace(/[^a-z0-9_-]/g, '') || ('pz_' + Date.now()));
 
   const patientObj = {
     id: patientId,
@@ -2943,14 +3072,14 @@ function saveParsedPatientToApp(sendWhatsApp = false) {
     goalWeight: goalVal,
     oilGrams: genderVal === 'F' ? 20 : 30,
     saltGrams: 5,
-    createdAt: new Date().toLocaleDateString('it-IT'),
+    updatedAt: new Date().toLocaleDateString('it-IT'),
     dietWeek: currentParsedDietData.dietWeek
   };
 
   if (!appState.patients) appState.patients = {};
   appState.patients[patientId] = patientObj;
 
-  // Registra in PROFILES e nello stato persone
+  // Aggiorna PROFILES e stato persone
   PROFILES[patientId] = {
     id: patientId,
     name: patientObj.name,
@@ -2965,15 +3094,23 @@ function saveParsedPatientToApp(sendWhatsApp = false) {
 
   if (!appState.people[patientId]) {
     appState.people[patientId] = createDefaultPersonState(patientObj.initialWeight);
-    appState.people[patientId].goalWeight = patientObj.goalWeight;
   }
+  appState.people[patientId].goalWeight = patientObj.goalWeight;
 
   saveState(true);
-  showToast(`🎉 Paziente ${patientObj.name} salvato con successo!`);
+  const successMsg = isUpdate
+    ? `🎉 Dieta di ${patientObj.name} aggiornata con successo! L'app sul suo telefono si è aggiornata.`
+    : `🎉 Paziente ${patientObj.name} salvato con successo!`;
+  showToast(successMsg);
 
   if (sendWhatsApp) {
-    sendPatientWhatsAppLink(patientId);
+    sendPatientWhatsAppLink(patientId, isUpdate);
   }
+
+  // Resetta dropdown studio
+  const select = document.getElementById('studioTargetPatientSelect');
+  if (select) select.value = 'auto';
+  handleTargetPatientChange('auto');
 
   // Passa alla scheda elenco pazienti
   switchStudioTab('list');
@@ -3004,6 +3141,17 @@ function renderStudioPatientsList() {
     ...Object.values(appState.patients || {})
   ];
 
+  // Aggiorna le opzioni del select `#studioTargetPatientSelect`
+  const targetSelect = document.getElementById('studioTargetPatientSelect');
+  if (targetSelect) {
+    const curVal = targetSelect.value;
+    targetSelect.innerHTML = `
+      <option value="auto">⚡ Rilevamento Automatico (Crea Nuovo o Aggiorna da PDF)</option>
+      ${allPatients.map((p) => `<option value="${p.id}">🔄 Aggiorna Dieta: ${p.name} (${p.code})</option>`).join('')}
+    `;
+    targetSelect.value = curVal || 'auto';
+  }
+
   container.innerHTML = allPatients.map((p) => {
     const isCur = getPrimaryPersonKey() === p.id;
     const isFemale = p.gender === 'F';
@@ -3032,13 +3180,16 @@ function renderStudioPatientsList() {
         </div>
 
         <div class="patient-actions-row">
-          <button class="btn-primary" style="font-size:0.84rem; padding:9px 12px;" onclick="activatePatientApp('${p.id}')">
-            📱 Apri la sua App
+          <button class="btn-primary" style="font-size:0.82rem; padding:8px 10px;" onclick="activatePatientApp('${p.id}')">
+            📱 Apri App
           </button>
-          <button class="btn-secondary" style="font-size:0.84rem; padding:9px 12px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="sendPatientWhatsAppLink('${p.id}')">
-            💬 Invia WhatsApp
+          <button class="btn-secondary" style="font-size:0.82rem; padding:8px 10px; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-primary);" onclick="startPatientDietUpdate('${p.id}')">
+            🔄 Aggiorna Dieta
           </button>
-          ${!p.isBase ? `<button onclick="deletePatient('${p.id}')" style="background:none; border:none; color:var(--accent-rose); font-weight:800; font-size:1.1rem; padding:0 8px; cursor:pointer;" title="Elimina Paziente">🗑️</button>` : ''}
+          <button class="btn-secondary" style="font-size:0.82rem; padding:8px 10px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="sendPatientWhatsAppLink('${p.id}', false)">
+            💬 WhatsApp
+          </button>
+          ${!p.isBase ? `<button onclick="deletePatient('${p.id}')" style="background:none; border:none; color:var(--accent-rose); font-weight:800; font-size:1.1rem; padding:0 6px; cursor:pointer;" title="Elimina Paziente">🗑️</button>` : ''}
         </div>
       </div>
     `;

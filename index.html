@@ -257,6 +257,19 @@
 
       <!-- Scheda 1: Auto-Lettura PDF -->
       <div id="studioTabPdfContent">
+        <!-- Selettore Modalità: Nuovo Paziente vs Aggiorna Paziente Esistente -->
+        <div style="background:var(--bg-subtle); border:1.5px solid var(--border-subtle); border-radius:15px; padding:12px 14px; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <label class="input-label" style="margin:0; font-weight:800;">🎯 Destinazione della Dieta:</label>
+            <span id="targetPatientBadge" class="modal-badge" style="display:none; margin:0; background:var(--accent-emerald); color:#fff;">AGGIORNAMENTO</span>
+          </div>
+          <select id="studioTargetPatientSelect" class="choice-select" onchange="handleTargetPatientChange(this.value)">
+            <option value="auto">⚡ Rilevamento Automatico (Crea Nuovo o Aggiorna Esistente da PDF)</option>
+            <option value="leonardo">🔄 Aggiorna Dieta: Leonardo Meo (112078)</option>
+            <option value="vitalucia">🔄 Aggiorna Dieta: Vita Lucia Cinieri (112079)</option>
+          </select>
+        </div>
+
         <input type="file" id="pdfFileInput" accept="application/pdf,text/plain" style="display:none;" onchange="handleStudioPdfUpload(event)" />
         <div id="pdfDropzone" class="pdf-dropzone" onclick="document.getElementById('pdfFileInput').click()" ondragover="handlePdfDragOver(event)" ondragleave="handlePdfDragLeave(event)" ondrop="handlePdfDrop(event)">
           <div class="dropzone-icon">📄✨</div>
@@ -296,7 +309,11 @@
 
         <!-- Modulo Revisione e Salvataggio Paziente -->
         <div id="pdfParsedReviewCard" class="parsed-diet-preview hidden">
-          <div class="card-section-title" style="color:var(--accent-emerald-text); margin-bottom:12px;">
+          <div id="reviewUpdateBanner" class="hidden" style="background:rgba(16,185,129,0.14); border:1.5px solid var(--accent-emerald); border-radius:13px; padding:11px 13px; margin-bottom:12px; font-size:0.86rem; color:var(--text-primary); line-height:1.4;">
+            🔄 <b>Aggiornamento Dieta per Paziente Esistente:</b> Le nuove dosi e alimenti estratti sostituiranno la vecchia dieta nell'app del paziente in tempo reale, mantenendo intatti lo storico del peso e i progressi!
+          </div>
+
+          <div class="card-section-title" id="reviewCardTitle" style="color:var(--accent-emerald-text); margin-bottom:12px;">
             ✅ Dieta Riconosciuta con Successo! Controlla e Salva:
           </div>
 
@@ -394,6 +411,18 @@
     <button onclick="stopKitchenVoice()" class="floating-close-btn">⏹️ Stop</button>
   </div>
 
+  <!-- MINI WIDGET FLOTTANTE SU SCHERMO (INTERATTIVO) -->
+  <div id="floatingLiveWidget" class="floating-live-widget hidden">
+    <div class="flw-content" onclick="jumpToRealToday()">
+      <span class="flw-dot"></span>
+      <span id="flwSummaryText" class="flw-text">🥗 0/5 pasti • 💧 0.0L</span>
+    </div>
+    <div class="flw-actions">
+      <button class="flw-quick-btn" onclick="addWater(250)" title="Aggiungi 1 bicchiere d'acqua">+250ml 💧</button>
+      <button class="flw-close-btn" onclick="toggleFloatingWidget(false)" title="Chiudi widget">✕</button>
+    </div>
+  </div>
+
   <!-- ===================================================================== -->
   <!-- CONTENITORE PRINCIPALE MOBILE                                         -->
   <!-- ===================================================================== -->
@@ -468,9 +497,14 @@
           <span class="lw-dot"></span>
           <span id="lwOwnerSummary">Il Tuo Controllo di Oggi</span>
         </div>
-        <button class="lw-pin-btn" onclick="pinSystemNotificationWidget()">
-          📌 Fissa su Schermo Telefono
-        </button>
+        <div style="display:flex; gap:6px;">
+          <button id="btnToggleFloatingWidget" class="lw-pin-btn" onclick="toggleFloatingWidget()" title="Attiva/Disattiva Mini-Widget Galleggiante">
+            📌 Mini-Widget Schermo
+          </button>
+          <button class="lw-pin-btn" onclick="pinSystemNotificationWidget()" title="Fissa nella tendina notifiche del telefono">
+            🔔 Tendina Notifiche
+          </button>
+        </div>
       </div>
 
       <div class="lw-metrics-grid">

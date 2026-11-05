@@ -1795,6 +1795,96 @@ body {
   cursor: pointer;
 }
 
+/* ==========================================================================
+   MINI WIDGET FLOTTANTE SU SCHERMO (FLOATING LIVE CONTROL)
+   ========================================================================== */
+.floating-live-widget {
+  position: fixed;
+  bottom: 80px;
+  right: 12px;
+  left: 12px;
+  max-width: 440px;
+  margin: 0 auto;
+  z-index: 930;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--accent-emerald);
+  border-radius: 99px;
+  padding: 8px 12px 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  animation: slideUpWidget 0.3s ease-out;
+}
+
+@keyframes slideUpWidget {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.flw-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.flw-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 99px;
+  background: var(--accent-emerald);
+  box-shadow: 0 0 8px var(--accent-emerald);
+  flex-shrink: 0;
+}
+
+.flw-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flw-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.flw-quick-btn {
+  padding: 7px 12px;
+  border-radius: 99px;
+  border: none;
+  background: var(--accent-emerald);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+.flw-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 99px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
 .hidden {
   display: none !important;
 }
