@@ -78,6 +78,7 @@ let appState = {
   fontSizeScale: 'large', // 'normal' | 'large' | 'xlarge'
   cookTogetherDoseMode: false,
   widgetPinned: false,
+  floatingWidgetActive: true,
   extensions: { ...DEFAULT_EXTENSIONS },
   snoozedPromptUntil: {},
   selectedDayIdx: getTodayDayIndex(),
@@ -305,6 +306,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   initRealtimeSync();
   startNotificationAndCalendarScheduler();
+  if (appState.floatingWidgetActive) {
+    toggleFloatingWidget(true);
+  }
 });
 
 // ============================================================================
@@ -574,6 +578,8 @@ function renderLiveControlWidget() {
   document.getElementById('partnerAvatar').textContent = partnerKey === 'vitalucia' ? '👩🏻' : '👨🏻';
   document.getElementById('partnerNameLabel').textContent = `${partnerProfile.shortName} oggi:`;
   document.getElementById('partnerStatsInline').textContent = `✅ ${pMeals}/5 pasti • 💧 ${pWaterL}L acqua`;
+
+  updateFloatingWidgetDisplay();
 }
 
 function getNextScheduledMealInfo() {
@@ -1735,48 +1741,90 @@ function saveMealTimes() {
   showToast('⏰ Orari domande e sveglie aggiornati!');
 }
 
+let globalAudioCtx = null;
+
+function getAudioContext() {
+  if (!globalAudioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      globalAudioCtx = new AudioContextClass();
+    }
+  }
+  if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+    globalAudioCtx.resume().catch(() => {});
+  }
+  return globalAudioCtx;
+}
+
+// Sblocco immediato dell'audio su cellulare al primo tocco ovunque sullo schermo
+function unlockGlobalAudio() {
+  const ctx = getAudioContext();
+  if (ctx) {
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    try {
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    } catch (e) {}
+  }
+}
+
+['click', 'touchstart', 'touchend', 'keydown'].forEach((evt) => {
+  window.addEventListener(evt, unlockGlobalAudio, { passive: true });
+});
+
 function playAlarmCycleSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const tone = appState.alarmTone || 'energetic';
-    const notes = tone === 'urgent'
-      ? [880, 880, 1046.5, 880]
-      : tone === 'melody'
-      ? [523.25, 659.25, 783.99, 1046.5]
-      : [587.33, 783.99, 880, 1174.66];
-    notes.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = tone === 'urgent' ? 'square' : 'triangle';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.22);
-      gain.gain.setValueAtTime(0.24, ctx.currentTime + idx * 0.22);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.22 + 0.2);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + idx * 0.22);
-      osc.stop(ctx.currentTime + idx * 0.22 + 0.2);
-    });
+    const ctx = getAudioContext();
+    if (ctx) {
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const tone = appState.alarmTone || 'energetic';
+      const notes = tone === 'urgent'
+        ? [880, 880, 1046.5, 880]
+        : tone === 'melody'
+        ? [523.25, 659.25, 783.99, 1046.5]
+        : [587.33, 783.99, 880, 1174.66];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = tone === 'urgent' ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.22);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime + idx * 0.22);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.22 + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + idx * 0.22);
+        osc.stop(ctx.currentTime + idx * 0.22 + 0.2);
+      });
+    }
   } catch (e) {}
-  if (navigator.vibrate) navigator.vibrate([350, 150, 350, 150, 400]);
+  if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
 }
 
 // Suono Doppio Trillo Stile WhatsApp per i messaggi della Chat di Coppia!
 function playWhatsAppChatSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [740, 1108.73]; // Fa#5 -> Do#6 (Tipico trillo cristallino da messaggistica)
-    notes.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.13);
-      gain.gain.setValueAtTime(0.32, ctx.currentTime + idx * 0.13);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.13 + 0.18);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + idx * 0.13);
-      osc.stop(ctx.currentTime + idx * 0.13 + 0.18);
-    });
+    const ctx = getAudioContext();
+    if (ctx) {
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const notes = [740, 1108.73]; // Fa#5 -> Do#6 (Tipico trillo cristallino da messaggistica)
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.13);
+        gain.gain.setValueAtTime(0.32, ctx.currentTime + idx * 0.13);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.13 + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + idx * 0.13);
+        osc.stop(ctx.currentTime + idx * 0.13 + 0.18);
+      });
+    }
   } catch (e) {}
   if (navigator.vibrate) navigator.vibrate([220, 90, 250]);
 }
@@ -1801,7 +1849,7 @@ function triggerContinuousAlarm(title, body, contextObj = null) {
         tag: 'dieta-step-alarm',
         renotify: true,
         requireInteraction: true,
-        vibrate: [400, 150, 400, 150, 500],
+        vibrate: [500, 200, 500, 200, 800, 300, 1000],
         actions: [
           { action: 'mark_meal', title: '✅ SÌ, HO FATTO!' },
           { action: 'snooze', title: '⏰ Tra 15 min' }
@@ -1845,6 +1893,36 @@ function snoozeActiveAlarm(mins) {
   }, mins * 60 * 1000);
 }
 
+// Test immediato del suono e sveglia da pulsante
+function triggerTestAlarmDirect(withSound = true) {
+  unlockGlobalAudio();
+  showToast('🔊 Sveglia di test attivata! Tocca "SÌ, HO FATTO!" per spegnerla.');
+  triggerContinuousAlarm(
+    '🔔 Test Sveglia Dieta PassoPasso',
+    'La sveglia, l\'audio e la vibrazione del telefono funzionano alla perfezione! Tocca "SÌ, HO FATTO!" per confermare.',
+    { type: 'test' }
+  );
+  if (withSound) {
+    playAlarmCycleSound();
+  }
+}
+
+// Test con ritardo di 5 secondi per permettere all'utente di bloccare lo schermo
+let backgroundTestTimer = null;
+function scheduleBackgroundTestAlarm(delaySeconds = 5) {
+  if (backgroundTestTimer) clearTimeout(backgroundTestTimer);
+  unlockGlobalAudio();
+  showToast(`⏰ PROVA TRA ${delaySeconds}s: BLOCCA ORA LO SCHERMO del telefono per vedere se squilla!`, 4500);
+
+  backgroundTestTimer = setTimeout(() => {
+    triggerContinuousAlarm(
+      '⏰ SVEGLIA DI TEST (Schermo Bloccato)',
+      'Fantastico! La notifica e la sveglia del tuo telefono suonano anche a schermo spento!',
+      { type: 'test' }
+    );
+  }, delaySeconds * 1000);
+}
+
 async function requestNotificationPermission() {
   if (!('Notification' in window)) return;
   const perm = await Notification.requestPermission();
@@ -1852,6 +1930,17 @@ async function requestNotificationPermission() {
     showToast('🔔 Avvisi sonori e notifiche stile WhatsApp attivati!');
     pinSystemNotificationWidget();
   }
+}
+
+// Verifica tollerante a finestra temporale: controlla se l'orario attuale è compreso tra targetHM e fino a maxWindowMins dopo
+function isTimeWithinTriggerWindow(targetHM, currentHM, maxWindowMins = 35) {
+  if (!targetHM || !currentHM) return false;
+  const [th, tm] = targetHM.split(':').map(Number);
+  const [ch, cm] = currentHM.split(':').map(Number);
+  const targetTotal = th * 60 + tm;
+  const currentTotal = ch * 60 + cm;
+  const diff = currentTotal - targetTotal;
+  return diff >= 0 && diff <= maxWindowMins;
 }
 
 function startNotificationAndCalendarScheduler() {
@@ -1869,12 +1958,14 @@ function startNotificationAndCalendarScheduler() {
     const currentHM = getCurrentTimeHM();
     const dayObj = getEffectiveDietDay(getTodayDayIndex());
     const pk = getPrimaryPersonKey();
-    const checkedToday = appState.people[pk].mealsByDate[todayStr] || {};
+    const checkedToday = appState.people[pk]?.mealsByDate?.[todayStr] || {};
 
+    // Controllo Pasti con tolleranza (se il telefono era a schermo spento o in tasca, suona appena riacceso!)
     ['colazione', 'spuntino', 'pranzo', 'merenda', 'cena'].forEach((mk) => {
       const targetTime = appState.mealTimes[mk];
       const notifId = `${todayStr}_meal_${mk}_${targetTime}`;
-      if (targetTime === currentHM && !appState.notifiedTodayKeys[notifId] && !checkedToday[mk]) {
+      const inWindow = isTimeWithinTriggerWindow(targetTime, currentHM, 35);
+      if (inWindow && !appState.notifiedTodayKeys[notifId] && !checkedToday[mk]) {
         appState.notifiedTodayKeys[notifId] = true;
         const meal = dayObj.meals[mk];
         triggerContinuousAlarm(
@@ -1885,9 +1976,11 @@ function startNotificationAndCalendarScheduler() {
       }
     });
 
+    // Controllo Acqua con tolleranza
     WATER_SCHEDULE.forEach((ws) => {
       const wId = `${todayStr}_water_${ws.time}`;
-      if (ws.time === currentHM && !appState.notifiedTodayKeys[wId]) {
+      const inWindow = isTimeWithinTriggerWindow(ws.time, currentHM, 20);
+      if (inWindow && !appState.notifiedTodayKeys[wId]) {
         appState.notifiedTodayKeys[wId] = true;
         triggerContinuousAlarm(
           `💧 Sono le ${ws.time}: hai bevuto 1 bicchiere d'acqua?`,
@@ -3116,6 +3209,25 @@ function saveParsedPatientToApp(sendWhatsApp = false) {
   switchStudioTab('list');
 }
 
+let patientSearchQuery = '';
+let patientListFilter = 'all'; // 'all' | 'men' | 'women'
+
+function handlePatientSearchInput(query) {
+  patientSearchQuery = (query || '').trim().toLowerCase();
+  renderStudioPatientsList();
+}
+
+function setPatientListFilter(filterType) {
+  patientListFilter = filterType;
+  const btnAll = document.getElementById('filterBtnAll');
+  const btnMen = document.getElementById('filterBtnMen');
+  const btnWomen = document.getElementById('filterBtnWomen');
+  if (btnAll) btnAll.classList.toggle('active', filterType === 'all');
+  if (btnMen) btnMen.classList.toggle('active', filterType === 'men');
+  if (btnWomen) btnWomen.classList.toggle('active', filterType === 'women');
+  renderStudioPatientsList();
+}
+
 function renderStudioPatientsList() {
   const container = document.getElementById('studioPatientsList');
   if (!container) return;
@@ -3125,21 +3237,41 @@ function renderStudioPatientsList() {
     {
       id: 'leonardo',
       name: 'Leonardo Meo',
+      shortName: 'Leonardo',
       code: '112078',
       gender: 'M',
+      oilGrams: 30,
+      saltGrams: 5,
+      updatedAt: 'Piano Ufficiale',
       desc: 'Piano Terapeutico Dott. Pastoressa (Uomo • 30g Olio)',
       isBase: true
     },
     {
       id: 'vitalucia',
       name: 'Vita Lucia Cinieri',
+      shortName: 'Vita Lucia',
       code: '112079',
       gender: 'F',
+      oilGrams: 20,
+      saltGrams: 5,
+      updatedAt: 'Piano Ufficiale',
       desc: 'Piano Terapeutico Dott. Pastoressa (Donna • 20g Olio + Ciclo)',
       isBase: true
     },
     ...Object.values(appState.patients || {})
   ];
+
+  // Aggiorna contatori globali
+  const countAll = allPatients.length;
+  const countMen = allPatients.filter((p) => p.gender === 'M').length;
+  const countWomen = allPatients.filter((p) => p.gender === 'F').length;
+
+  const countAllEl = document.getElementById('countAllPatients');
+  const countMenEl = document.getElementById('countMenPatients');
+  const countWomenEl = document.getElementById('countWomenPatients');
+  if (countAllEl) countAllEl.textContent = countAll;
+  if (countMenEl) countMenEl.textContent = countMen;
+  if (countWomenEl) countWomenEl.textContent = countWomen;
 
   // Aggiorna le opzioni del select `#studioTargetPatientSelect`
   const targetSelect = document.getElementById('studioTargetPatientSelect');
@@ -3152,7 +3284,48 @@ function renderStudioPatientsList() {
     targetSelect.value = curVal || 'auto';
   }
 
-  container.innerHTML = allPatients.map((p) => {
+  // Filtro genere
+  let filtered = allPatients;
+  if (patientListFilter === 'men') {
+    filtered = filtered.filter((p) => p.gender === 'M');
+  } else if (patientListFilter === 'women') {
+    filtered = filtered.filter((p) => p.gender === 'F');
+  }
+
+  // Filtro ricerca testo (nome, cognome o codice)
+  if (patientSearchQuery) {
+    filtered = filtered.filter((p) => {
+      const n = (p.name || '').toLowerCase();
+      const c = (p.code || '').toLowerCase();
+      const sn = (p.shortName || '').toLowerCase();
+      return n.includes(patientSearchQuery) || c.includes(patientSearchQuery) || sn.includes(patientSearchQuery);
+    });
+  }
+
+  // Aggiorna contatore mostrati
+  const visibleCountEl = document.getElementById('patientsVisibleCount');
+  if (visibleCountEl) visibleCountEl.textContent = `${filtered.length} di ${countAll}`;
+
+  // Se nessun risultato trovato
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 32px 16px; background: var(--bg-subtle); border-radius: 16px; border: 1px dashed var(--border-subtle);">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">🔍</div>
+        <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 4px;">
+          Nessun paziente trovato
+        </div>
+        <div style="font-size: 0.84rem; color: var(--text-secondary); max-width: 320px; margin: 0 auto;">
+          Nessun risultato per <b>"${patientSearchQuery}"</b>. Verifica l'ortografia o prova a cercare per codice cliente.
+        </div>
+        <button class="btn-secondary" style="margin-top: 12px; font-size: 0.8rem; padding: 6px 14px;" onclick="document.getElementById('patientSearchInput').value=''; handlePatientSearchInput(''); setPatientListFilter('all');">
+          Mostra Tutti i Pazienti
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map((p) => {
     const isCur = getPrimaryPersonKey() === p.id;
     const isFemale = p.gender === 'F';
     const linkUrl = `https://dieta-passopasso-4uu5.vercel.app/?paziente=${p.id}`;
@@ -3165,29 +3338,33 @@ function renderStudioPatientsList() {
               ${isFemale ? '👩🏻' : '👨🏻'}
             </div>
             <div>
-              <div style="font-weight:800; font-size:1.02rem; color:var(--text-primary);">
-                ${p.name} ${isCur ? '🟢 (Attivo su questo telefono)' : ''}
+              <div style="font-weight:800; font-size:1.02rem; color:var(--text-primary); display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span>${p.name}</span>
+                ${isCur ? '<span style="font-size:0.68rem; font-weight:800; background:var(--accent-emerald); color:#fff; padding:2px 6px; border-radius:99px;">ATTIVO QUI</span>' : ''}
               </div>
-              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px;">
-                Codice: <b>${p.code}</b> • ${isFemale ? 'Donna (Ciclo attivo)' : 'Uomo (Ciclo disattivato)'}
+              <div class="patient-meta-row" style="margin-top:4px;">
+                <span class="patient-tag-pill">Codice: <b>#${p.code}</b></span>
+                <span class="patient-tag-pill ${isFemale ? 'tag-female' : 'tag-male'}">${isFemale ? '👩 Donna (Ciclo attivo)' : '👨 Uomo'}</span>
+                <span class="patient-tag-pill">🫒 ${p.oilGrams || (isFemale ? 20 : 30)}g Olio</span>
+                ${p.updatedAt ? `<span class="patient-tag-pill" style="opacity:0.85;">Aggiornato: ${p.updatedAt}</span>` : ''}
               </div>
             </div>
           </div>
         </div>
 
-        <div style="font-size:0.8rem; color:var(--text-secondary); background:var(--bg-subtle); padding:8px 10px; border-radius:10px; word-break:break-all;">
-          🔗 <b>Link Paziente:</b> <span style="color:var(--accent-emerald-text);">${linkUrl}</span>
+        <div style="font-size:0.78rem; color:var(--text-secondary); background:var(--bg-subtle); padding:8px 10px; border-radius:10px; word-break:break-all;">
+          🔗 <b>Link Personale:</b> <span style="color:var(--accent-emerald-text); font-weight:700;">${linkUrl}</span>
         </div>
 
         <div class="patient-actions-row">
-          <button class="btn-primary" style="font-size:0.82rem; padding:8px 10px;" onclick="activatePatientApp('${p.id}')">
+          <button class="btn-primary" style="font-size:0.82rem; padding:8px 10px;" onclick="activatePatientApp('${p.id}')" title="Configura questo telefono con la dieta di ${p.name}">
             📱 Apri App
           </button>
-          <button class="btn-secondary" style="font-size:0.82rem; padding:8px 10px; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-primary);" onclick="startPatientDietUpdate('${p.id}')">
+          <button class="btn-secondary" style="font-size:0.82rem; padding:8px 10px; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-primary);" onclick="startPatientDietUpdate('${p.id}')" title="Carica un nuovo PDF per aggiornare la dieta di ${p.name}">
             🔄 Aggiorna Dieta
           </button>
-          <button class="btn-secondary" style="font-size:0.82rem; padding:8px 10px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="sendPatientWhatsAppLink('${p.id}', false)">
-            💬 WhatsApp
+          <button class="btn-secondary" style="font-size:0.82rem; padding:8px 10px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="sendPatientWhatsAppLink('${p.id}', false)" title="Invia il link WhatsApp a ${p.name}">
+            💬 Invia WhatsApp
           </button>
           ${!p.isBase ? `<button onclick="deletePatient('${p.id}')" style="background:none; border:none; color:var(--accent-rose); font-weight:800; font-size:1.1rem; padding:0 6px; cursor:pointer;" title="Elimina Paziente">🗑️</button>` : ''}
         </div>
@@ -3208,15 +3385,19 @@ function activatePatientApp(patientId) {
   showToast(`✅ App configurata e attiva per ${PROFILES[patientId]?.name || patientId}!`);
 }
 
-function sendPatientWhatsAppLink(patientId) {
+function sendPatientWhatsAppLink(patientId, isUpdate = false) {
   const p = PROFILES[patientId] || appState.patients?.[patientId];
   if (!p) return;
   const url = `https://dieta-passopasso-4uu5.vercel.app/?paziente=${patientId}`;
-  const msg =
-    `🥗 *Ciao ${p.shortName || p.name}!*\n\n` +
-    `Ecco il link per aprire e installare la tua *App Nutrizionale Personale* (Piano Dott. Pastoressa):\n\n` +
-    `👉 ${url}\n\n` +
-    `Tocca il link per vedere subito i tuoi pasti, le grammature a crudo e cotto, i promemoria per bere l'acqua e il diario dei progressi!`;
+  const msg = isUpdate
+    ? `🥗 *Ciao ${p.shortName || p.name}!*\n\n` +
+      `Abbiamo appena aggiornato la tua *Dieta PassoPasso* con il *NUOVO Piano Nutrizionale* del Dott. Pastoressa! 🔄✨\n\n` +
+      `👉 Tocca qui per aprire e consultare la tua nuova dieta:\n${url}\n\n` +
+      `Tutti i tuoi litri d'acqua, i progressi e le registrazioni precedenti sono stati conservati!`
+    : `🥗 *Ciao ${p.shortName || p.name}!*\n\n` +
+      `Ecco il link per aprire e installare sul tuo telefono la tua *App Nutrizionale Personale* (Piano Dott. Pastoressa):\n\n` +
+      `👉 ${url}\n\n` +
+      `Tocca il link per vedere subito tutti i tuoi pasti, le grammature a crudo e cotto, i promemoria per bere l'acqua e il diario dei progressi!`;
 
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 }

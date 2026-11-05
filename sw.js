@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dieta-pastoressa-v5.2';
+const CACHE_NAME = 'dieta-pastoressa-v5.3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

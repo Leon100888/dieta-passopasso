@@ -375,8 +375,33 @@
         </div>
       </div>
 
-      <!-- Scheda 2: Elenco Pazienti & Link WhatsApp -->
+      <!-- Scheda 2: Elenco Pazienti & Link WhatsApp (CRM 50-100+ Pazienti) -->
       <div id="studioTabListContent" class="hidden">
+        <!-- Barra di Ricerca e Filtri Rapidi -->
+        <div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:16px; padding:12px; margin-bottom:14px;">
+          <div style="position:relative; margin-bottom:10px;">
+            <input type="text" id="patientSearchInput" class="input-field" placeholder="🔍 Cerca per nome, cognome o codice (es. Leonardo, 112078)..." oninput="handlePatientSearchInput(this.value)" style="width:100%; box-sizing:border-box; padding-left:36px; font-size:0.9rem;" />
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem; opacity:0.6; pointer-events:none;">🔍</span>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
+            <div style="display:flex; gap:6px;">
+              <button id="filterBtnAll" class="seg-btn active" style="padding:6px 12px; font-size:0.78rem; font-weight:800; border-radius:99px;" onclick="setPatientListFilter('all')">
+                Tutti (<span id="countAllPatients">0</span>)
+              </button>
+              <button id="filterBtnMen" class="seg-btn" style="padding:6px 12px; font-size:0.78rem; font-weight:800; border-radius:99px;" onclick="setPatientListFilter('men')">
+                👨 Uomini (<span id="countMenPatients">0</span>)
+              </button>
+              <button id="filterBtnWomen" class="seg-btn" style="padding:6px 12px; font-size:0.78rem; font-weight:800; border-radius:99px;" onclick="setPatientListFilter('women')">
+                👩 Donne (<span id="countWomenPatients">0</span>)
+              </button>
+            </div>
+            <div style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">
+              Mostrati: <b id="patientsVisibleCount" style="color:var(--text-primary);">0</b>
+            </div>
+          </div>
+        </div>
+
         <div class="patient-grid-list" id="studioPatientsList">
           <!-- Popolato dinamicamente -->
         </div>
@@ -662,9 +687,27 @@
           </div>
         </div>
 
-        <button class="btn-secondary" style="width:100%; margin-top:12px;" onclick="triggerContinuousAlarm('☕ Sono le 08:00: hai fatto Colazione?', 'Premi SÌ per spuntare automaticamente la colazione di oggi!', { type: 'meal', mealKey: 'colazione' })">
-          🔔 Prova Domanda con Sveglia Ora
-        </button>
+        <!-- Diagnosi e Test Sveglia Telefono -->
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-subtle);">
+          <div style="font-size:0.86rem; font-weight:800; margin-bottom:8px; color:var(--text-primary);">
+            🔔 Test Sveglie e Permessi Telefono:
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+            <button class="btn-primary" style="padding:10px; font-size:0.82rem;" onclick="triggerTestAlarmDirect(true)">
+              🔊 Suona Subito (Test Suono)
+            </button>
+            <button class="btn-secondary" style="padding:10px; font-size:0.82rem; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="scheduleBackgroundTestAlarm(5)">
+              ⏰ Prova tra 5s (Blocca Schermo!)
+            </button>
+          </div>
+
+          <div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:12px; padding:10px 12px; font-size:0.78rem; line-height:1.45; color:var(--text-secondary);">
+            💡 <b>Per far squillare sempre le sveglie a schermo spento:</b><br/>
+            Android e Xiaomi/Redmi congelano le schede in background per risparmiare batteria.<br/>
+            • <b>Consenti Notifiche:</b> tocca il pulsante <i>"Tendina Notifiche"</i> in cima all'app.<br/>
+            • <b>Su Redmi / Xiaomi (MIUI/HyperOS):</b> vai in <i>Impostazioni → App → Chrome (o Dieta PRO) → Notifiche</i> e attiva <b>"Consenti notifiche schermata di blocco"</b> e <b>"Consenti audio"</b>.
+          </div>
+        </div>
       </div>
     </main>
 
