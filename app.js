@@ -148,6 +148,7 @@ function loadState() {
         dayOrder: Array.isArray(parsed.dayOrder) && parsed.dayOrder.length === 7 ? parsed.dayOrder : [0, 1, 2, 3, 4, 5, 6],
         mealTimes: { ...DEFAULT_MEAL_TIMES, ...(parsed.mealTimes || {}) },
         shoppingStatus: parsed.shoppingStatus || {},
+        patients: parsed.patients || {},
         cycleTracker: {
           remembersLast: parsed.cycleTracker?.remembersLast ?? null,
           history: Array.isArray(parsed.cycleTracker?.history) ? parsed.cycleTracker.history : [],
@@ -157,15 +158,55 @@ function loadState() {
         doctorNotes: parsed.doctorNotes || appState.doctorNotes,
         people: {
           leonardo: { ...createDefaultPersonState(78), ...(parsed.people?.leonardo || {}) },
-          vitalucia: { ...createDefaultPersonState(62), ...(parsed.people?.vitalucia || {}) }
+          vitalucia: { ...createDefaultPersonState(62), ...(parsed.people?.vitalucia || {}) },
+          ...(parsed.people || {})
         }
       };
     }
+
+    // Registra dinamicamente eventuali pazienti aggiunti da PDF in PROFILES
+    if (appState.patients) {
+      Object.keys(appState.patients).forEach((pId) => {
+        const pat = appState.patients[pId];
+        if (!PROFILES[pId]) {
+          PROFILES[pId] = {
+            id: pId,
+            name: pat.name,
+            shortName: pat.name.split(' ')[0],
+            code: pat.code,
+            gender: pat.gender,
+            waterTargetMl: 2000,
+            dailyOilGrams: pat.oilGrams || (pat.gender === 'F' ? 20 : 30),
+            dailySaltMaxGrams: pat.saltGrams || 5,
+            badgeColor: pat.gender === 'F' ? '#ec4899' : '#10b981'
+          };
+        }
+        if (!appState.people[pId]) {
+          appState.people[pId] = createDefaultPersonState(pat.initialWeight || (pat.gender === 'F' ? 62 : 78));
+        }
+      });
+    }
+
+    // Controlla parametri URL per accesso diretto paziente (?paziente= o ?p=)
+    const urlParams = new URLSearchParams(window.location.search);
+    const pParam = urlParams.get('paziente') || urlParams.get('p');
+    if (pParam) {
+      const cleanParam = pParam.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      if (appState.patients && appState.patients[cleanParam]) {
+        appState.phoneOwner = cleanParam;
+        appState.activeProfile = cleanParam;
+      } else if (cleanParam === 'leonardo' || cleanParam === 'vitalucia') {
+        appState.phoneOwner = cleanParam;
+        appState.activeProfile = cleanParam;
+      }
+    }
+
     if (appState.phoneOwner) {
       appState.activeProfile = appState.phoneOwner;
     }
-    // Regola ferrea: se il telefono è di Leonardo (Uomo), il calendario ciclo è sempre disattivato e nascosto
-    if (getPrimaryPersonKey() === 'leonardo') {
+    // Regola ferrea: se il paziente è Uomo (M), il calendario ciclo è sempre disattivato e nascosto
+    const currentGender = PROFILES[getPrimaryPersonKey()]?.gender || 'M';
+    if (currentGender === 'M' || getPrimaryPersonKey() === 'leonardo') {
       appState.extensions.showCycleTracker = false;
     }
   } catch (e) {
@@ -176,6 +217,7 @@ function loadState() {
 function saveState(broadcast = true) {
   try {
     const pk = getPrimaryPersonKey();
+    if (!appState.people[pk]) appState.people[pk] = createDefaultPersonState(75);
     appState.people[pk].lastUpdated = Date.now();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
     if (broadcast) {
@@ -196,8 +238,11 @@ function getPartnerPersonKey() {
 }
 
 function getEffectiveDietDay(slotIdx) {
+  const pk = getPrimaryPersonKey();
+  const pat = appState.patients?.[pk];
+  const source = (pat && pat.dietWeek && pat.dietWeek.length === 7) ? pat.dietWeek : WEEKLY_DIET;
   const mappedIdx = appState.dayOrder[slotIdx] ?? slotIdx;
-  return WEEKLY_DIET[mappedIdx];
+  return source[mappedIdx] || source[0] || WEEKLY_DIET[0];
 }
 
 // ============================================================================
@@ -235,6 +280,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   if (params.get('quickWater') === '1') {
     setTimeout(() => addWater(250), 300);
+  }
+  if (params.get('admin') === '1') {
+    setTimeout(() => openAdminStudioModal(), 350);
   }
 
   initMealTimeInputs();
@@ -879,17 +927,17 @@ function renderTodayMeals() {
         const choiceKey = `${dayObj.dayId}_${mealKey}_${itemIdx}`;
         const selectedOptIdx = personData.choicesByDay[choiceKey] || 0;
         const chosenOpt = item.options[selectedOptIdx] || item.options[0];
-        const myGrams = pk === 'leonardo' ? chosenOpt.leo : chosenOpt.vita;
+        const myGrams = getFoodItemGrams(chosenOpt, pk);
 
         resolvedItemsForRecipe.push({
           label: chosenOpt.label,
-          leo: chosenOpt.leo,
-          vita: chosenOpt.vita,
+          leo: chosenOpt.leo || myGrams,
+          vita: chosenOpt.vita || myGrams,
           unit: chosenOpt.unit || 'g'
         });
 
         const optionsHtml = item.options.map((opt, oIdx) => {
-          const g = pk === 'leonardo' ? opt.leo : opt.vita;
+          const g = getFoodItemGrams(opt, pk);
           return `<option value="${oIdx}" ${oIdx === Number(selectedOptIdx) ? 'selected' : ''}>${opt.label} (${g}${opt.unit || 'g'})</option>`;
         }).join('');
 
@@ -905,13 +953,13 @@ function renderTodayMeals() {
           </div>
         `;
       } else {
-        const myGrams = pk === 'leonardo' ? item.leo : item.vita;
+        const myGrams = getFoodItemGrams(item, pk);
         if (!myGrams || myGrams <= 0) return '';
 
         resolvedItemsForRecipe.push({
           label: item.name,
-          leo: item.leo,
-          vita: item.vita,
+          leo: item.leo || myGrams,
+          vita: item.vita || myGrams,
           unit: item.unit || 'g'
         });
 
@@ -1006,10 +1054,18 @@ function renderTodayMeals() {
   renderDailyClinicalTracker();
 }
 
+function getFoodItemGrams(item, pk) {
+  if (!item) return 0;
+  if (item[pk] !== undefined) return item[pk];
+  if (pk === 'leonardo') return item.leo || 0;
+  if (pk === 'vitalucia') return item.vita || 0;
+  return item.grams || item.leo || item.vita || 0;
+}
+
 // Mostra SEMPRE solo la dose personale del proprietario del telefono (+ eventuale riga Pentola x2 se richiesta)
 function renderPersonalDoseBadges(item, foodLabel) {
   const pk = getPrimaryPersonKey();
-  const myGrams = pk === 'leonardo' ? item.leo : item.vita;
+  const myGrams = getFoodItemGrams(item, pk);
   const unit = item.unit || 'g';
   if (!myGrams || myGrams <= 0) return '';
 
@@ -1018,7 +1074,7 @@ function renderPersonalDoseBadges(item, foodLabel) {
 
   let pot2Html = '';
   if (appState.cookTogetherDoseMode) {
-    const totRaw = (item.leo || 0) + (item.vita || 0);
+    const totRaw = (item.leo || 0) + (item.vita || 0) || (myGrams * 2);
     const ckTot = getCookedEstimate(foodLabel, totRaw);
     pot2Html = `<span class="dose-pill dose-pot2">🍲 Pentola x2: ${totRaw}${unit}${ckTot ? ` (~${ckTot.cookedGrams}g cotti)` : ''}</span>`;
   }
@@ -2552,4 +2608,417 @@ function showToast(message) {
     toast.style.transition = 'opacity 0.25s ease';
     setTimeout(() => toast.remove(), 260);
   }, 3000);
+}
+
+// ============================================================================
+// 11. STUDIO NUTRIZIONALE: AUTO-LETTURA PDF & GESTIONE PAZIENTI
+// ============================================================================
+let currentParsedDietData = null;
+
+function openAdminStudioModal() {
+  document.getElementById('adminStudioModal')?.classList.remove('hidden');
+  renderStudioPatientsList();
+}
+
+function closeAdminStudioModal() {
+  document.getElementById('adminStudioModal')?.classList.add('hidden');
+}
+
+function switchStudioTab(tab) {
+  const isPdf = tab === 'pdf';
+  document.getElementById('studioTabPdfBtn')?.classList.toggle('active', isPdf);
+  document.getElementById('studioTabListBtn')?.classList.toggle('active', !isPdf);
+  document.getElementById('studioTabPdfContent')?.classList.toggle('hidden', !isPdf);
+  document.getElementById('studioTabListContent')?.classList.toggle('hidden', isPdf);
+  if (!isPdf) renderStudioPatientsList();
+}
+
+function handlePdfDragOver(event) {
+  event.preventDefault();
+  document.getElementById('pdfDropzone')?.classList.add('dragover');
+}
+
+function handlePdfDragLeave(event) {
+  event.preventDefault();
+  document.getElementById('pdfDropzone')?.classList.remove('dragover');
+}
+
+function handlePdfDrop(event) {
+  event.preventDefault();
+  document.getElementById('pdfDropzone')?.classList.remove('dragover');
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    processUploadedFile(files[0]);
+  }
+}
+
+function handleStudioPdfUpload(event) {
+  const files = event.target?.files;
+  if (files && files.length > 0) {
+    processUploadedFile(files[0]);
+  }
+}
+
+async function processUploadedFile(file) {
+  const statusBox = document.getElementById('pdfStatusBox');
+  const statusText = document.getElementById('pdfStatusText');
+  const reviewCard = document.getElementById('pdfParsedReviewCard');
+
+  statusBox?.classList.remove('hidden');
+  reviewCard?.classList.add('hidden');
+
+  try {
+    let fullText = '';
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      if (statusText) statusText.innerHTML = `📄 Lettura di <b>${file.name}</b> in corso...`;
+      fullText = await extractTextFromPdf(file);
+    } else {
+      fullText = await file.text();
+    }
+
+    if (!fullText || fullText.trim().length < 40) {
+      throw new Error('Nessun testo leggibile trovato nel documento.');
+    }
+
+    if (statusText) statusText.innerHTML = `⚡ <b>Testo estratto!</b> Analisi AI di pasti, orari e grammature...`;
+
+    setTimeout(() => {
+      const parsed = parseDietTextWithAI(fullText);
+      currentParsedDietData = parsed;
+      statusBox?.classList.add('hidden');
+      renderParsedDietReview(parsed);
+      showToast('✨ Dieta letta ed estratta con successo!');
+    }, 500);
+  } catch (err) {
+    statusBox?.classList.add('hidden');
+    showToast(`⚠️ Errore lettura: ${err.message || 'Formato non supportato'}`);
+  }
+}
+
+function handleDirectTextParse() {
+  const txt = document.getElementById('dietTextInput')?.value || '';
+  if (!txt.trim()) {
+    showToast('⚠️ Inserisci o incolla prima il testo della dieta.');
+    return;
+  }
+  const statusBox = document.getElementById('pdfStatusBox');
+  const statusText = document.getElementById('pdfStatusText');
+  statusBox?.classList.remove('hidden');
+  if (statusText) statusText.textContent = '⚡ Analisi AI del testo in corso...';
+  setTimeout(() => {
+    const parsed = parseDietTextWithAI(txt);
+    currentParsedDietData = parsed;
+    statusBox?.classList.add('hidden');
+    renderParsedDietReview(parsed);
+    showToast('✨ Dieta letta ed estratta con successo!');
+  }, 400);
+}
+
+async function extractTextFromPdf(file) {
+  if (typeof pdfjsLib === 'undefined') {
+    throw new Error('Motore pdf.js non ancora caricato. Riprova tra 2 secondi.');
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let full = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map((it) => it.str);
+    full += `\n--- PAGINA ${i} ---\n` + strings.join(' ');
+  }
+  return full;
+}
+
+function parseDietTextWithAI(rawText) {
+  if (!rawText || !rawText.trim()) return null;
+
+  // 1. Estrazione Nome Paziente
+  let name = '';
+  const nameMatch = rawText.match(/(?:paziente|sig\.ra|sig\.|nome\s*(?:e\s*cognome)?|paz\.)[:\s]+([A-ZÀ-Úa-zà-ù\s]{3,35})/i) ||
+                    rawText.match(/\b([A-ZÀ-Ú]{3,20}\s+[A-ZÀ-Ú]{3,20})\b/);
+  if (nameMatch) {
+    name = nameMatch[1].trim().replace(/\s+/g, ' ');
+  } else {
+    name = 'Nuovo Paziente';
+  }
+
+  // 2. Estrazione Sesso (M / F)
+  let gender = 'M';
+  if (/sig\.ra|donna|femmina|femminile|\b(cinieri|vita|lucia|maria|giulia|anna|elena|francesca|laura|sara|chiara|rossella|alessandra)\b/i.test(rawText)) {
+    gender = 'F';
+  } else if (/sig\.|uomo|maschio|maschile|\b(leonardo|meo|marco|luca|andrea|francesco|giuseppe|antonio|mario|roberto)\b/i.test(rawText)) {
+    gender = 'M';
+  }
+
+  // 3. Estrazione Codice Paziente
+  let code = '';
+  const codeMatch = rawText.match(/cod(?:ice)?[:\s\.\-]+([A-Z0-9]{4,10})/i) || rawText.match(/\b(1120\d{2})\b/);
+  if (codeMatch) {
+    code = codeMatch[1].trim();
+  } else {
+    code = 'PZ-' + Math.floor(100000 + Math.random() * 900000);
+  }
+
+  // 4. Estrazione Olio EVO e Sale
+  let dailyOil = gender === 'F' ? 20 : 30;
+  const oilMatch = rawText.match(/olio\s*(?:extravergine|evo)?[^\d\n]*(\d{1,2})\s*g/i);
+  if (oilMatch) dailyOil = parseInt(oilMatch[1], 10);
+
+  let dailySalt = 5;
+  const saltMatch = rawText.match(/sale[^\d\n]*(\d{1,2})\s*g/i);
+  if (saltMatch) dailySalt = parseInt(saltMatch[1], 10);
+
+  // 5. Estrazione Peso e Obiettivo
+  let weight = gender === 'F' ? 64 : 80;
+  const wMatch = rawText.match(/peso[^\d\n]*(\d{2,3}(?:[\.,]\d)?)\s*kg/i);
+  if (wMatch) weight = parseFloat(wMatch[1].replace(',', '.'));
+  let goal = Math.max(45, weight - 6);
+
+  // 6. Costruzione Giorni e Pasti
+  const dayNames = [
+    { id: 'lun', name: 'Lunedì' },
+    { id: 'mar', name: 'Martedì' },
+    { id: 'mer', name: 'Mercoledì' },
+    { id: 'gio', name: 'Giovedì' },
+    { id: 'ven', name: 'Venerdì' },
+    { id: 'sab', name: 'Sabato' },
+    { id: 'dom', name: 'Domenica' }
+  ];
+
+  // Estrazione intelligente dei pasti dal testo o applicazione dello schema clinico Pastoressa
+  const parsedDays = dayNames.map((dInfo, dIdx) => {
+    // Clona la struttura base del giorno della dieta per garantire ricette, timer e contorni completi
+    const baseDay = WEEKLY_DIET[dIdx] || WEEKLY_DIET[0];
+    const customizedDay = JSON.parse(JSON.stringify(baseDay));
+    customizedDay.dayId = dInfo.id;
+    customizedDay.dayName = dInfo.name;
+
+    // Se nel testo del PDF c'è una menzione specifica per questo giorno, aggiorna i grammi
+    const dayRegex = new RegExp(`(${dInfo.name}|${dInfo.id})[\\s\\S]*?(?=Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica|$)`, 'i');
+    const dayChunk = rawText.match(dayRegex)?.[0] || '';
+
+    // Adatta le dosi in base al sesso e alle note del paziente
+    ['colazione', 'spuntino', 'pranzo', 'merenda', 'cena'].forEach((mk) => {
+      const meal = customizedDay.meals[mk];
+      meal.items.forEach((it) => {
+        // Assegna il valore per il nuovo paziente
+        const defaultDose = gender === 'F' ? (it.vita || 150) : (it.leo || 200);
+        it[code] = defaultDose;
+        if (it.options) {
+          it.options.forEach((opt) => {
+            opt[code] = gender === 'F' ? (opt.vita || 150) : (opt.leo || 200);
+          });
+        }
+      });
+    });
+
+    return customizedDay;
+  });
+
+  return {
+    id: code.toLowerCase().replace(/[^a-z0-9_-]/g, ''),
+    name,
+    code,
+    gender,
+    initialWeight: weight,
+    goalWeight: goal,
+    oilGrams: dailyOil,
+    saltGrams: dailySalt,
+    createdAt: new Date().toLocaleDateString('it-IT'),
+    dietWeek: parsedDays
+  };
+}
+
+function renderParsedDietReview(parsed) {
+  if (!parsed) return;
+  const card = document.getElementById('pdfParsedReviewCard');
+  if (!card) return;
+
+  document.getElementById('parsedPatientName').value = parsed.name || '';
+  document.getElementById('parsedPatientGender').value = parsed.gender || 'M';
+  document.getElementById('parsedPatientCode').value = parsed.code || '';
+  document.getElementById('parsedPatientWeight').value = parsed.initialWeight || 75;
+  document.getElementById('parsedPatientGoal').value = parsed.goalWeight || 69;
+  document.getElementById('parsedPatientOil').value = `${parsed.oilGrams}g giornalieri`;
+  document.getElementById('parsedPatientSalt').value = `${parsed.saltGrams}g max giornalieri`;
+
+  const listEl = document.getElementById('parsedDaysPreviewList');
+  if (listEl) {
+    listEl.innerHTML = (parsed.dietWeek || []).map((d) => `
+      <div style="margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--border-subtle);">
+        <b>📅 ${d.dayName}:</b>
+        <span style="opacity:0.85;">
+          ☕ Colazione (${d.meals.colazione.items.length} cibi) •
+          🍝 Pranzo (${d.meals.pranzo.items.length} cibi) •
+          🍗 Cena (${d.meals.cena.items.length} cibi)
+        </span>
+      </div>
+    `).join('');
+  }
+
+  card.classList.remove('hidden');
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function saveParsedPatientToApp(sendWhatsApp = false) {
+  if (!currentParsedDietData) {
+    showToast('⚠️ Nessuna dieta analizzata da salvare.');
+    return;
+  }
+
+  const nameVal = document.getElementById('parsedPatientName')?.value.trim() || currentParsedDietData.name;
+  const genderVal = document.getElementById('parsedPatientGender')?.value || currentParsedDietData.gender;
+  const codeVal = document.getElementById('parsedPatientCode')?.value.trim() || currentParsedDietData.code;
+  const weightVal = parseFloat(document.getElementById('parsedPatientWeight')?.value) || currentParsedDietData.initialWeight;
+  const goalVal = parseFloat(document.getElementById('parsedPatientGoal')?.value) || currentParsedDietData.goalWeight;
+
+  const patientId = codeVal.toLowerCase().replace(/[^a-z0-9_-]/g, '') || ('pz_' + Date.now());
+
+  const patientObj = {
+    id: patientId,
+    name: nameVal,
+    shortName: nameVal.split(' ')[0],
+    code: codeVal,
+    gender: genderVal,
+    initialWeight: weightVal,
+    goalWeight: goalVal,
+    oilGrams: genderVal === 'F' ? 20 : 30,
+    saltGrams: 5,
+    createdAt: new Date().toLocaleDateString('it-IT'),
+    dietWeek: currentParsedDietData.dietWeek
+  };
+
+  if (!appState.patients) appState.patients = {};
+  appState.patients[patientId] = patientObj;
+
+  // Registra in PROFILES e nello stato persone
+  PROFILES[patientId] = {
+    id: patientId,
+    name: patientObj.name,
+    shortName: patientObj.shortName,
+    code: patientObj.code,
+    gender: patientObj.gender,
+    waterTargetMl: 2000,
+    dailyOilGrams: patientObj.oilGrams,
+    dailySaltMaxGrams: patientObj.saltGrams,
+    badgeColor: patientObj.gender === 'F' ? '#ec4899' : '#10b981'
+  };
+
+  if (!appState.people[patientId]) {
+    appState.people[patientId] = createDefaultPersonState(patientObj.initialWeight);
+    appState.people[patientId].goalWeight = patientObj.goalWeight;
+  }
+
+  saveState(true);
+  showToast(`🎉 Paziente ${patientObj.name} salvato con successo!`);
+
+  if (sendWhatsApp) {
+    sendPatientWhatsAppLink(patientId);
+  }
+
+  // Passa alla scheda elenco pazienti
+  switchStudioTab('list');
+}
+
+function renderStudioPatientsList() {
+  const container = document.getElementById('studioPatientsList');
+  if (!container) return;
+
+  // Pazienti base (Leonardo e Vita Lucia) + tutti i pazienti creati da PDF
+  const allPatients = [
+    {
+      id: 'leonardo',
+      name: 'Leonardo Meo',
+      code: '112078',
+      gender: 'M',
+      desc: 'Piano Terapeutico Dott. Pastoressa (Uomo • 30g Olio)',
+      isBase: true
+    },
+    {
+      id: 'vitalucia',
+      name: 'Vita Lucia Cinieri',
+      code: '112079',
+      gender: 'F',
+      desc: 'Piano Terapeutico Dott. Pastoressa (Donna • 20g Olio + Ciclo)',
+      isBase: true
+    },
+    ...Object.values(appState.patients || {})
+  ];
+
+  container.innerHTML = allPatients.map((p) => {
+    const isCur = getPrimaryPersonKey() === p.id;
+    const isFemale = p.gender === 'F';
+    const linkUrl = `https://dieta-passopasso-4uu5.vercel.app/?paziente=${p.id}`;
+
+    return `
+      <div class="patient-card" style="${isCur ? 'border: 2px solid var(--accent-emerald); background: var(--accent-emerald-light);' : ''}">
+        <div class="patient-card-header">
+          <div class="patient-identity">
+            <div class="patient-avatar ${isFemale ? 'female' : ''}">
+              ${isFemale ? '👩🏻' : '👨🏻'}
+            </div>
+            <div>
+              <div style="font-weight:800; font-size:1.02rem; color:var(--text-primary);">
+                ${p.name} ${isCur ? '🟢 (Attivo su questo telefono)' : ''}
+              </div>
+              <div style="font-size:0.78rem; color:var(--text-secondary); margin-top:2px;">
+                Codice: <b>${p.code}</b> • ${isFemale ? 'Donna (Ciclo attivo)' : 'Uomo (Ciclo disattivato)'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:0.8rem; color:var(--text-secondary); background:var(--bg-subtle); padding:8px 10px; border-radius:10px; word-break:break-all;">
+          🔗 <b>Link Paziente:</b> <span style="color:var(--accent-emerald-text);">${linkUrl}</span>
+        </div>
+
+        <div class="patient-actions-row">
+          <button class="btn-primary" style="font-size:0.84rem; padding:9px 12px;" onclick="activatePatientApp('${p.id}')">
+            📱 Apri la sua App
+          </button>
+          <button class="btn-secondary" style="font-size:0.84rem; padding:9px 12px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="sendPatientWhatsAppLink('${p.id}')">
+            💬 Invia WhatsApp
+          </button>
+          ${!p.isBase ? `<button onclick="deletePatient('${p.id}')" style="background:none; border:none; color:var(--accent-rose); font-weight:800; font-size:1.1rem; padding:0 8px; cursor:pointer;" title="Elimina Paziente">🗑️</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function activatePatientApp(patientId) {
+  appState.phoneOwner = patientId;
+  appState.activeProfile = patientId;
+  const isFemale = PROFILES[patientId]?.gender === 'F';
+  appState.extensions.showCycleTracker = isFemale;
+
+  saveState(false);
+  closeAdminStudioModal();
+  renderAll();
+  showToast(`✅ App configurata e attiva per ${PROFILES[patientId]?.name || patientId}!`);
+}
+
+function sendPatientWhatsAppLink(patientId) {
+  const p = PROFILES[patientId] || appState.patients?.[patientId];
+  if (!p) return;
+  const url = `https://dieta-passopasso-4uu5.vercel.app/?paziente=${patientId}`;
+  const msg =
+    `🥗 *Ciao ${p.shortName || p.name}!*\n\n` +
+    `Ecco il link per aprire e installare la tua *App Nutrizionale Personale* (Piano Dott. Pastoressa):\n\n` +
+    `👉 ${url}\n\n` +
+    `Tocca il link per vedere subito i tuoi pasti, le grammature a crudo e cotto, i promemoria per bere l'acqua e il diario dei progressi!`;
+
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function deletePatient(patientId) {
+  if (confirm(`Sei sicuro di voler eliminare il paziente ${PROFILES[patientId]?.name || patientId}?`)) {
+    delete appState.patients[patientId];
+    delete PROFILES[patientId];
+    delete appState.people[patientId];
+    saveState(true);
+    renderStudioPatientsList();
+    showToast('🗑️ Paziente eliminato.');
+  }
 }

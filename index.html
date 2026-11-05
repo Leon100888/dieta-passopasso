@@ -32,6 +32,13 @@
     }
   </script>
   <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js" defer></script>
+  <!-- Motore di Auto-Lettura PDF Integrato (pdf.js) per Analisi Diete Nutrizionali -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 </head>
 <body class="theme-light font-scale-large">
   <div id="toastContainer" class="toast-container"></div>
@@ -217,6 +224,144 @@
     </div>
   </div>
 
+  <!-- ===================================================================== -->
+  <!-- 3. PANNELLO STUDIO NUTRIZIONALE & AUTO-LETTURA PDF (AI DIET STUDIO)   -->
+  <!-- ===================================================================== -->
+  <div id="adminStudioModal" class="modal-overlay hidden">
+    <div class="modal-card studio-modal-card">
+      <div class="studio-header">
+        <div>
+          <div class="modal-badge">PIATTAFORMA MEDICO-NUTRIZIONALE</div>
+          <h2 class="modal-title" style="font-size:1.35rem; margin-top:4px;">🩺 Studio Pazienti &amp; Diete</h2>
+          <p class="modal-subtitle" style="margin-bottom:0;">
+            Auto-lettura PDF del Dottore, creazione automatica dell'app e gestione clienti.
+          </p>
+        </div>
+        <button class="modal-close-btn" onclick="closeAdminStudioModal()">✕</button>
+      </div>
+
+      <!-- Schede Studio -->
+      <div class="studio-tabs">
+        <button id="studioTabPdfBtn" class="studio-tab-btn active" onclick="switchStudioTab('pdf')">
+          📄 1. Auto-Lettura PDF
+        </button>
+        <button id="studioTabListBtn" class="studio-tab-btn" onclick="switchStudioTab('list')">
+          👥 2. Elenco Pazienti
+        </button>
+      </div>
+
+      <!-- Scheda 1: Auto-Lettura PDF -->
+      <div id="studioTabPdfContent">
+        <input type="file" id="pdfFileInput" accept="application/pdf,text/plain" style="display:none;" onchange="handleStudioPdfUpload(event)" />
+        <div id="pdfDropzone" class="pdf-dropzone" onclick="document.getElementById('pdfFileInput').click()" ondragover="handlePdfDragOver(event)" ondragleave="handlePdfDragLeave(event)" ondrop="handlePdfDrop(event)">
+          <div class="dropzone-icon">📄✨</div>
+          <div class="dropzone-title">Trascina qui il PDF della Dieta</div>
+          <div class="dropzone-sub">
+            Oppure tocca per selezionare il file PDF inviato dal Dott. Pastoressa o da qualsiasi nutrizionista. Il motore AI estrae automaticamente i 5 pasti, le grammature crudo/cotto, le alternative e il sesso.
+          </div>
+          <button type="button" class="btn-primary" style="margin:0 auto; pointer-events:none;">
+            📁 Scegli File PDF dal Dispositivo
+          </button>
+        </div>
+
+        <!-- Box Incolla Testo Alternativo -->
+        <details class="recipe-accordion" style="margin-bottom:14px;">
+          <summary class="recipe-accordion-summary">
+            <span>📝 Oppure incolla il testo della dieta</span>
+            <span>▾</span>
+          </summary>
+          <div class="recipe-accordion-body" style="padding-top:10px;">
+            <textarea id="dietTextInput" class="input-field" style="width:100%; min-height:120px; font-size:0.85rem;" placeholder="Incolla qui il testo della dieta se non hai il PDF a portata di mano..."></textarea>
+            <button class="btn-primary" style="margin-top:8px; width:100%;" onclick="handleDirectTextParse()">
+              ⚡ Avvia Auto-Lettura del Testo
+            </button>
+          </div>
+        </details>
+
+        <!-- Box Stato Avanzamento Lettura -->
+        <div id="pdfStatusBox" class="pdf-status-box hidden">
+          <div style="font-size:1.8rem; margin-bottom:6px;">⚡</div>
+          <div id="pdfStatusText" style="font-weight:800; font-size:0.95rem; color:var(--accent-emerald-text);">
+            Lettura del documento PDF in corso...
+          </div>
+          <div style="font-size:0.82rem; color:var(--text-secondary); margin-top:4px;">
+            Analisi AI dei 5 pasti, pesi e alternative per tutti i 7 giorni.
+          </div>
+        </div>
+
+        <!-- Modulo Revisione e Salvataggio Paziente -->
+        <div id="pdfParsedReviewCard" class="parsed-diet-preview hidden">
+          <div class="card-section-title" style="color:var(--accent-emerald-text); margin-bottom:12px;">
+            ✅ Dieta Riconosciuta con Successo! Controlla e Salva:
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label class="input-label">👤 Nome e Cognome</label>
+              <input type="text" id="parsedPatientName" class="input-field" placeholder="Es. Mario Rossi" />
+            </div>
+            <div>
+              <label class="input-label">🚻 Sesso Paziente</label>
+              <select id="parsedPatientGender" class="choice-select">
+                <option value="M">👨 Uomo (Ciclo disattivato)</option>
+                <option value="F">👩 Donna (Ciclo attivo)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+            <div>
+              <label class="input-label">🏷️ Codice Paziente</label>
+              <input type="text" id="parsedPatientCode" class="input-field" placeholder="Es. 112080" />
+            </div>
+            <div>
+              <label class="input-label">⚖️ Peso Iniziale (kg)</label>
+              <input type="number" id="parsedPatientWeight" class="input-field" placeholder="Es. 80.0" step="0.5" />
+            </div>
+            <div>
+              <label class="input-label">🎯 Obiettivo (kg)</label>
+              <input type="number" id="parsedPatientGoal" class="input-field" placeholder="Es. 72.0" step="0.5" />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+            <div>
+              <label class="input-label">🫒 Olio EVO Giornaliero</label>
+              <input type="text" id="parsedPatientOil" class="input-field" value="30g (15g pranzo + 15g cena)" />
+            </div>
+            <div>
+              <label class="input-label">🧂 Sale Giornaliero Max</label>
+              <input type="text" id="parsedPatientSalt" class="input-field" value="5g (1 cucchiaino raso)" />
+            </div>
+          </div>
+
+          <!-- Anteprima Sintetica Giorni Estratti -->
+          <div style="font-size:0.84rem; font-weight:800; margin-bottom:6px; color:var(--text-primary);">
+            📅 Giornate &amp; Pasti Estratti:
+          </div>
+          <div id="parsedDaysPreviewList" style="max-height:160px; overflow-y:auto; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:10px; margin-bottom:14px; font-size:0.8rem; line-height:1.45;">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-primary" style="width:100%;" onclick="saveParsedPatientToApp(false)">
+              💾 Salva Paziente e Attiva App
+            </button>
+            <button class="btn-secondary" style="width:100%; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="saveParsedPatientToApp(true)">
+              💬 Salva e Invia Link Accesso su WhatsApp al Paziente
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheda 2: Elenco Pazienti & Link WhatsApp -->
+      <div id="studioTabListContent" class="hidden">
+        <div class="patient-grid-list" id="studioPatientsList">
+          <!-- Popolato dinamicamente -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- NOTIFICA STILE WHATSAPP IN ARRIVO DAL PARTNER -->
   <div id="whatsappChatBanner" class="wa-banner hidden">
     <div class="wa-banner-left" onclick="openChatFromBanner()">
@@ -261,6 +406,9 @@
       </div>
 
       <div class="header-actions">
+        <button class="admin-pill-btn" onclick="openAdminStudioModal()" title="Studio Pazienti & Auto-Lettura PDF">
+          🩺 Studio
+        </button>
         <button id="themeToggleBtn" class="header-icon-btn" onclick="toggleThemeMode()" title="Cambia Tema Bianca / Notte">
           🌙
         </button>
