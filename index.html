@@ -104,6 +104,11 @@
       </div>
 
       <div class="options-scroll-body">
+        <!-- Tasto Installa Rapido 1-Tocco -->
+        <button class="btn-primary" style="width:100%; margin-bottom:16px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none; box-shadow:0 4px 14px rgba(5,150,105,0.25);" onclick="triggerPwaInstall()">
+          📲 Installa l'App sulla Schermata Home
+        </button>
+
         <!-- Aspetto Tema: Bianca Signorile / Scura Notte -->
         <div class="option-group">
           <div class="option-group-title">🎨 Stile Visivo dell'App</div>
@@ -417,6 +422,42 @@
         </button>
       </div>
     </header>
+
+    <!-- ===================================================================== -->
+    <!-- BANNER INSTALLAZIONE 1-TOCCO AUTOMATICA                               -->
+    <!-- ===================================================================== -->
+    <div id="oneTapInstallBanner" class="install-banner hidden">
+      <div class="install-banner-content">
+        <div class="install-banner-icon">📲</div>
+        <div>
+          <div class="install-banner-title">Installa l'App sul tuo Telefono</div>
+          <div class="install-banner-sub">Per averla sempre a portata di mano nella Home, a tutto schermo come una vera app!</div>
+        </div>
+      </div>
+      <div class="install-banner-actions">
+        <button id="btnTriggerInstall" class="btn-install-now" onclick="triggerPwaInstall()">
+          ⚡ Installa Subito (1 Tocco)
+        </button>
+        <button class="btn-install-dismiss" onclick="dismissInstallBanner()" title="Chiudi avviso">✕</button>
+      </div>
+    </div>
+
+    <!-- MODAL GUIDA INSTALLAZIONE PER IPHONE / SAFARI -->
+    <div id="iosInstallModal" class="modal-overlay hidden">
+      <div class="modal-card" style="text-align:center; max-width:400px;">
+        <div style="font-size:3rem; margin-bottom:8px;">🍎📲</div>
+        <h2 class="modal-title" style="margin-bottom:8px;">Installa su iPhone</h2>
+        <p class="modal-subtitle" style="text-align:left; line-height:1.6; margin-bottom:14px;">
+          Per aggiungere l'icona alla schermata Home del tuo iPhone:<br/>
+          <b>1.</b> Tocca il tasto <b>Condividi ⬆️</b> (in basso al centro in Safari).<br/>
+          <b>2.</b> Scorri l'elenco e tocca <b>"Aggiungi a schermata Home" ➕</b>.<br/>
+          <b>3.</b> Tocca <b>Aggiungi</b> in alto a destra: fatto!
+        </p>
+        <button class="btn-primary" style="width:100%;" onclick="document.getElementById('iosInstallModal').classList.add('hidden')">
+          Ho Capito!
+        </button>
+      </div>
+    </div>
 
     <!-- ===================================================================== -->
     <!-- WIDGET CONTROLLO TOTALE SEMPRE ATTIVO (In-App + Barra Blocco Telefono)-->

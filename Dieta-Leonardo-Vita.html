@@ -1717,6 +1717,99 @@ body {
   margin-top: 4px;
 }
 
+/* ==========================================================================
+   BANNER INSTALLAZIONE RAPIDA 1-TOCCO (PWA / ANDROID / IOS)
+   ========================================================================== */
+.install-banner {
+  background: linear-gradient(135deg, #065f46, #059669);
+  color: #ffffff;
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1.5px solid #34d399;
+  animation: slideDownFade 0.4s ease-out;
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.install-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.install-banner-icon {
+  font-size: 2.2rem;
+  background: rgba(255, 255, 255, 0.2);
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.install-banner-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.install-banner-sub {
+  font-size: 0.82rem;
+  color: #d1fae5;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.install-banner-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-install-now {
+  flex: 1;
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: none;
+  background: #ffffff;
+  color: #064e3b;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-install-now:active {
+  transform: scale(0.98);
+}
+
+.btn-install-dismiss {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.15);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .hidden {
   display: none !important;
 }
@@ -1813,6 +1906,11 @@ body {
       </div>
 
       <div class="options-scroll-body">
+        <!-- Tasto Installa Rapido 1-Tocco -->
+        <button class="btn-primary" style="width:100%; margin-bottom:16px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none; box-shadow:0 4px 14px rgba(5,150,105,0.25);" onclick="triggerPwaInstall()">
+          📲 Installa l'App sulla Schermata Home
+        </button>
+
         <!-- Aspetto Tema: Bianca Signorile / Scura Notte -->
         <div class="option-group">
           <div class="option-group-title">🎨 Stile Visivo dell'App</div>
@@ -2126,6 +2224,42 @@ body {
         </button>
       </div>
     </header>
+
+    <!-- ===================================================================== -->
+    <!-- BANNER INSTALLAZIONE 1-TOCCO AUTOMATICA                               -->
+    <!-- ===================================================================== -->
+    <div id="oneTapInstallBanner" class="install-banner hidden">
+      <div class="install-banner-content">
+        <div class="install-banner-icon">📲</div>
+        <div>
+          <div class="install-banner-title">Installa l'App sul tuo Telefono</div>
+          <div class="install-banner-sub">Per averla sempre a portata di mano nella Home, a tutto schermo come una vera app!</div>
+        </div>
+      </div>
+      <div class="install-banner-actions">
+        <button id="btnTriggerInstall" class="btn-install-now" onclick="triggerPwaInstall()">
+          ⚡ Installa Subito (1 Tocco)
+        </button>
+        <button class="btn-install-dismiss" onclick="dismissInstallBanner()" title="Chiudi avviso">✕</button>
+      </div>
+    </div>
+
+    <!-- MODAL GUIDA INSTALLAZIONE PER IPHONE / SAFARI -->
+    <div id="iosInstallModal" class="modal-overlay hidden">
+      <div class="modal-card" style="text-align:center; max-width:400px;">
+        <div style="font-size:3rem; margin-bottom:8px;">🍎📲</div>
+        <h2 class="modal-title" style="margin-bottom:8px;">Installa su iPhone</h2>
+        <p class="modal-subtitle" style="text-align:left; line-height:1.6; margin-bottom:14px;">
+          Per aggiungere l'icona alla schermata Home del tuo iPhone:<br/>
+          <b>1.</b> Tocca il tasto <b>Condividi ⬆️</b> (in basso al centro in Safari).<br/>
+          <b>2.</b> Scorri l'elenco e tocca <b>"Aggiungi a schermata Home" ➕</b>.<br/>
+          <b>3.</b> Tocca <b>Aggiungi</b> in alto a destra: fatto!
+        </p>
+        <button class="btn-primary" style="width:100%;" onclick="document.getElementById('iosInstallModal').classList.add('hidden')">
+          Ho Capito!
+        </button>
+      </div>
+    </div>
 
     <!-- ===================================================================== -->
     <!-- WIDGET CONTROLLO TOTALE SEMPRE ATTIVO (In-App + Barra Blocco Telefono)-->
@@ -3893,9 +4027,67 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ownerSetupModal')?.classList.remove('hidden');
   }
 
+  // Verifica se mostrare banner installazione rapida su iPhone se non ancora installata
+  const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isIosDevice && !isStandaloneMode && !localStorage.getItem('dieta_pwa_install_dismissed')) {
+    document.getElementById('oneTapInstallBanner')?.classList.remove('hidden');
+  }
+
   initRealtimeSync();
   startNotificationAndCalendarScheduler();
 });
+
+// ============================================================================
+// GESTIONE INSTALLAZIONE RAPIDA 1-TOCCO (PWA / ANDROID / IOS)
+// ============================================================================
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!isStandalone && !localStorage.getItem('dieta_pwa_install_dismissed')) {
+    document.getElementById('oneTapInstallBanner')?.classList.remove('hidden');
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  document.getElementById('oneTapInstallBanner')?.classList.add('hidden');
+  showToast('🎉 App installata con successo sulla schermata Home!');
+});
+
+function triggerPwaInstall() {
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIos) {
+    document.getElementById('iosInstallModal')?.classList.remove('hidden');
+    return;
+  }
+
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        document.getElementById('oneTapInstallBanner')?.classList.add('hidden');
+        showToast('📲 Installazione avviata!');
+      }
+      deferredInstallPrompt = null;
+    });
+  } else {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      showToast('✅ L\'app è già installata sul tuo telefono!');
+    } else {
+      showToast('💡 Tocca i 3 puntini ⋮ in alto nel browser e seleziona "Installa applicazione"');
+    }
+  }
+}
+
+function dismissInstallBanner() {
+  document.getElementById('oneTapInstallBanner')?.classList.add('hidden');
+  localStorage.setItem('dieta_pwa_install_dismissed', '1');
+}
 
 // ============================================================================
 // 1. IDENTITÀ PERSONALE TELEFONO, TEMA VISIVO E MENU ⚙️ OPZIONI

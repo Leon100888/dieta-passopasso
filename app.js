@@ -296,9 +296,67 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ownerSetupModal')?.classList.remove('hidden');
   }
 
+  // Verifica se mostrare banner installazione rapida su iPhone se non ancora installata
+  const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isIosDevice && !isStandaloneMode && !localStorage.getItem('dieta_pwa_install_dismissed')) {
+    document.getElementById('oneTapInstallBanner')?.classList.remove('hidden');
+  }
+
   initRealtimeSync();
   startNotificationAndCalendarScheduler();
 });
+
+// ============================================================================
+// GESTIONE INSTALLAZIONE RAPIDA 1-TOCCO (PWA / ANDROID / IOS)
+// ============================================================================
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!isStandalone && !localStorage.getItem('dieta_pwa_install_dismissed')) {
+    document.getElementById('oneTapInstallBanner')?.classList.remove('hidden');
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  document.getElementById('oneTapInstallBanner')?.classList.add('hidden');
+  showToast('🎉 App installata con successo sulla schermata Home!');
+});
+
+function triggerPwaInstall() {
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIos) {
+    document.getElementById('iosInstallModal')?.classList.remove('hidden');
+    return;
+  }
+
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        document.getElementById('oneTapInstallBanner')?.classList.add('hidden');
+        showToast('📲 Installazione avviata!');
+      }
+      deferredInstallPrompt = null;
+    });
+  } else {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      showToast('✅ L\'app è già installata sul tuo telefono!');
+    } else {
+      showToast('💡 Tocca i 3 puntini ⋮ in alto nel browser e seleziona "Installa applicazione"');
+    }
+  }
+}
+
+function dismissInstallBanner() {
+  document.getElementById('oneTapInstallBanner')?.classList.add('hidden');
+  localStorage.setItem('dieta_pwa_install_dismissed', '1');
+}
 
 // ============================================================================
 // 1. IDENTITÀ PERSONALE TELEFONO, TEMA VISIVO E MENU ⚙️ OPZIONI

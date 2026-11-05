@@ -1702,6 +1702,99 @@ body {
   margin-top: 4px;
 }
 
+/* ==========================================================================
+   BANNER INSTALLAZIONE RAPIDA 1-TOCCO (PWA / ANDROID / IOS)
+   ========================================================================== */
+.install-banner {
+  background: linear-gradient(135deg, #065f46, #059669);
+  color: #ffffff;
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1.5px solid #34d399;
+  animation: slideDownFade 0.4s ease-out;
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.install-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.install-banner-icon {
+  font-size: 2.2rem;
+  background: rgba(255, 255, 255, 0.2);
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.install-banner-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.install-banner-sub {
+  font-size: 0.82rem;
+  color: #d1fae5;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.install-banner-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-install-now {
+  flex: 1;
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: none;
+  background: #ffffff;
+  color: #064e3b;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-install-now:active {
+  transform: scale(0.98);
+}
+
+.btn-install-dismiss {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.15);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .hidden {
   display: none !important;
 }
