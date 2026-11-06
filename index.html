@@ -569,6 +569,46 @@
       </div>
     </div>
 
+    <!-- MODAL GUIDA WIDGET E SCORCIATOIE SU SCHERMATA HOME TELEFONO -->
+    <div id="homeScreenShortcutsModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width:440px;">
+        <div style="font-size:3rem; margin-bottom:8px; text-align:center;">📱</div>
+        <div class="modal-badge" style="margin:0 auto 8px auto;">SCHERMATA HOME TELEFONO</div>
+        <h2 class="modal-title" style="font-size:1.3rem; text-align:center;">Come avere il Widget tra le App</h2>
+        <p class="modal-subtitle" style="font-size:0.84rem; line-height:1.5; margin-bottom:14px; text-align:center;">
+          I browser (Chrome) non possono creare da soli un widget sul launcher di Android senza il tuo tocco.<br/>
+          Ecco i <b>2 modi garantiti</b> per avere il controllo sulla schermata del tuo telefono:
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+          <div style="background:var(--bg-subtle); border:1.5px solid var(--accent-emerald); border-radius:14px; padding:12px;">
+            <div style="font-weight:800; font-size:0.92rem; color:var(--accent-emerald-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+              <span>1️⃣ Scorciatoie Rapide 1-Tocco sulla Home</span>
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45;">
+              • Vai sulla schermata del telefono dove ci sono le tue app.<br/>
+              • <b>Tieni premuta l'icona di Dieta PRO per 1 secondo</b>.<br/>
+              • Apparirà il menu rapido con: <b>💧 +250ml Acqua</b> e <b>🍽️ Segna Pasto</b>.<br/>
+              • <b>Trascina una di queste scorciatoie</b> direttamente sullo schermo: avrai un vero pulsante rapido sempre attivo tra le tue app!
+            </div>
+          </div>
+
+          <div style="background:var(--bg-subtle); border:1.5px solid var(--border-subtle); border-radius:14px; padding:12px;">
+            <div style="font-weight:800; font-size:0.92rem; color:var(--accent-gold); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+              <span>2️⃣ Widget Fisso nella Tendina Notifiche</span>
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45;">
+              Tocca <b>"🔔 Tendina Notifiche"</b>: comparirà una barra fissa nella tendina superiore del telefono, visibile da qualsiasi schermata scorrendo il dito dall'alto verso il basso!
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="width:100%; padding:12px;" onclick="document.getElementById('homeScreenShortcutsModal').classList.add('hidden')">
+          Ho Capito, Perfetto!
+        </button>
+      </div>
+    </div>
+
     <!-- ===================================================================== -->
     <!-- WIDGET CONTROLLO TOTALE SEMPRE ATTIVO (In-App + Barra Blocco Telefono)-->
     <!-- ===================================================================== -->
@@ -579,8 +619,8 @@
           <span id="lwOwnerSummary">Il Tuo Controllo di Oggi</span>
         </div>
         <div style="display:flex; gap:6px;">
-          <button id="btnToggleFloatingWidget" class="lw-pin-btn" onclick="toggleFloatingWidget()" title="Attiva/Disattiva Mini-Widget Galleggiante">
-            📌 Mini-Widget Schermo
+          <button id="btnHomeScreenWidget" class="lw-pin-btn" onclick="openHomeScreenShortcutsModal()" title="Come mettere le scorciatoie o il widget sullo schermo del telefono tra le app">
+            📲 Widget Telefono
           </button>
           <button class="lw-pin-btn" onclick="pinSystemNotificationWidget()" title="Fissa nella tendina notifiche del telefono">
             🔔 Tendina Notifiche
@@ -743,25 +783,44 @@
           </div>
         </div>
 
-        <!-- Diagnosi e Test Sveglia Telefono -->
-        <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-subtle);">
-          <div style="font-size:0.86rem; font-weight:800; margin-bottom:8px; color:var(--text-primary);">
-            🔔 Test Sveglie e Permessi Telefono:
+        <!-- Sincronizzazione Sveglie di Sistema del Telefono (GARANTITE AL 100%) -->
+        <div style="margin-top:14px; padding-top:12px; border-top:1.5px solid var(--border-subtle);">
+          <div style="font-size:0.88rem; font-weight:800; margin-bottom:6px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+            <span>⏰ Sveglie di Sistema del Telefono</span>
+            <span style="font-size:0.72rem; font-weight:800; background:rgba(16,185,129,0.15); color:var(--accent-emerald-text); padding:2px 8px; border-radius:99px;">SQUILLO GARANTITO AL 100%</span>
+          </div>
+
+          <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45; margin-bottom:10px;">
+            I telefoni Android (Xiaomi, Redmi, Samsung) <b>congelano il browser Chrome a schermo spento</b> per risparmiare batteria.<br/>
+            Sincronizzando le sveglie nel <b>Calendario e Orologio del tuo telefono</b>, il cellulare suonerà <b>forte e con la suoneria di sistema tutti i giorni</b>, anche a schermo bloccato e app chiusa!
+          </p>
+
+          <button class="btn-primary" style="width:100%; padding:14px; margin-bottom:8px; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none; border-radius:14px; font-weight:800; font-size:0.92rem; box-shadow:0 4px 15px rgba(5,150,105,0.28);" onclick="exportDietAlarmsICS()">
+            📲 Sincronizza Sveglie nel Calendario del Telefono
+          </button>
+
+          <button class="btn-secondary" style="width:100%; padding:10px; font-size:0.82rem; margin-bottom:12px; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-primary);" onclick="openAndroidClockAlarms()">
+            ⏰ Apri Orologio Android per Sveglie
+          </button>
+
+          <!-- Diagnosi Notifiche Browser -->
+          <div style="font-size:0.84rem; font-weight:800; margin-bottom:6px; color:var(--text-primary);">
+            🔔 Test Avviso Immediato &amp; Notifica Schermo:
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
             <button class="btn-primary" style="padding:10px; font-size:0.82rem;" onclick="triggerTestAlarmDirect(true)">
               🔊 Suona Subito (Test Suono)
             </button>
-            <button class="btn-secondary" style="padding:10px; font-size:0.82rem; background:linear-gradient(135deg, #059669, #10b981); color:#fff; border:none;" onclick="scheduleBackgroundTestAlarm(5)">
+            <button class="btn-secondary" style="padding:10px; font-size:0.82rem; background:rgba(200,160,89,0.18); color:var(--accent-gold); border:1px solid var(--accent-gold);" onclick="scheduleBackgroundTestAlarm(5)">
               ⏰ Prova tra 5s (Blocca Schermo!)
             </button>
           </div>
 
           <div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:12px; padding:10px 12px; font-size:0.78rem; line-height:1.45; color:var(--text-secondary);">
-            💡 <b>Per far squillare sempre le sveglie a schermo spento:</b><br/>
-            Android e Xiaomi/Redmi congelano le schede in background per risparmiare batteria.<br/>
-            • <b>Consenti Notifiche:</b> tocca il pulsante <i>"Tendina Notifiche"</i> in cima all'app.<br/>
-            • <b>Su Redmi / Xiaomi (MIUI/HyperOS):</b> vai in <i>Impostazioni → App → Chrome (o Dieta PRO) → Notifiche</i> e attiva <b>"Consenti notifiche schermata di blocco"</b> e <b>"Consenti audio"</b>.
+            💡 <b>Per Xiaomi / Redmi (HyperOS / MIUI):</b><br/>
+            1. Tieni premuta l'icona dell'app → <i>Informazioni app (ⓘ)</i>.<br/>
+            2. Tocca <i>Notifiche</i> → Attiva <b>"Notifiche schermata di blocco"</b> e <b>"Consenti audio"</b>.<br/>
+            3. Su <i>Risparmio energetico</i> → Seleziona <b>"Nessuna restrizione"</b>.
           </div>
         </div>
       </div>

@@ -78,7 +78,7 @@ let appState = {
   fontSizeScale: 'large', // 'normal' | 'large' | 'xlarge'
   cookTogetherDoseMode: false,
   widgetPinned: false,
-  floatingWidgetActive: true,
+  floatingWidgetActive: false,
   extensions: { ...DEFAULT_EXTENSIONS },
   snoozedPromptUntil: {},
   selectedDayIdx: getTodayDayIndex(),
@@ -605,6 +605,10 @@ function getNextScheduledMealInfo() {
   return { timeStr: 'Domani', label: '✨ Fine Giornata', key: null };
 }
 
+function openHomeScreenShortcutsModal() {
+  document.getElementById('homeScreenShortcutsModal')?.classList.remove('hidden');
+}
+
 function toggleFloatingWidget(forceState) {
   const el = document.getElementById('floatingLiveWidget');
   if (!el) return;
@@ -633,11 +637,8 @@ function updateFloatingWidgetDisplay() {
 }
 
 async function pinSystemNotificationWidget() {
-  // Attiva sempre anche il Mini-Widget visivo flottante
-  toggleFloatingWidget(true);
-
   if (!('Notification' in window)) {
-    showToast('📌 Mini-Widget attivo sullo schermo!');
+    showToast('⚠️ Questo browser non supporta le notifiche di sistema.');
     return;
   }
 
@@ -645,11 +646,11 @@ async function pinSystemNotificationWidget() {
     try {
       const perm = await Notification.requestPermission();
       if (perm !== 'granted') {
-        showToast('💡 Mini-Widget attivo! Per vederlo anche nella tendina, tocca "Consenti" notifiche.');
+        showToast('💡 Per vedere il widget nella tendina del telefono, tocca "Consenti" sulle notifiche di Chrome.');
         return;
       }
     } catch (e) {
-      showToast('📌 Mini-Widget attivo sullo schermo!');
+      showToast('⚠️ Errore permessi notifiche.');
       return;
     }
   }
@@ -1926,12 +1927,106 @@ function scheduleBackgroundTestAlarm(delaySeconds = 5) {
   }, delaySeconds * 1000);
 }
 
+// Sincronizzazione Sveglie nel Calendario di Sistema del Telefono (Android e iOS)
+// Le sveglie inserite nel calendario del telefono squillano SEMPRE all'orario esatto con l'allarme di sistema, anche a schermo spento e telefono bloccato!
+function exportDietAlarmsICS() {
+  const pk = getPrimaryPersonKey();
+  const profile = PROFILES[pk] || { shortName: 'Paziente' };
+  const mealTimes = appState.mealTimes || DEFAULT_MEAL_TIMES;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const datePrefix = `${year}${month}${day}`;
+
+  const schedule = [
+    { key: 'colazione', title: '☕ Colazione', time: mealTimes.colazione || '08:00', desc: 'È ora della colazione! Apri Dieta PassoPasso per controllare il menu.' },
+    { key: 'spuntino', title: '🥜 Spuntino Mattina', time: mealTimes.spuntino || '10:30', desc: 'È ora dello spuntino di metà mattina!' },
+    { key: 'pranzo', title: '🍝 Pranzo', time: mealTimes.pranzo || '13:00', desc: 'È ora di pranzo! Apri Dieta PassoPasso per le grammature e spuntare il pasto.' },
+    { key: 'merenda', title: '🍎 Merenda Pomeriggio', time: mealTimes.merenda || '16:30', desc: 'È ora della merenda pomeridiana!' },
+    { key: 'cena', title: '🍗 Cena', time: mealTimes.cena || '20:30', desc: 'È ora di cena! Apri Dieta PassoPasso per le porzioni e l\'olio EVO.' },
+    { key: 'acqua1', title: '💧 Bevi 1 Bicchiere d\'Acqua', time: '11:30', desc: 'Ricordati di bere 250ml d\'acqua per mantenere l\'idratazione (2L al giorno).' },
+    { key: 'acqua2', title: '💧 Bevi 1 Bicchiere d\'Acqua', time: '18:00', desc: 'Bevi 1 bicchiere d\'acqua per raggiungere i 2L giornalieri!' }
+  ];
+
+  let icsEvents = '';
+
+  schedule.forEach((item, idx) => {
+    const [hh, mm] = item.time.split(':');
+    const startStr = `${datePrefix}T${hh}${mm}00`;
+    const endMinutes = parseInt(mm, 10) + 15;
+    const endHh = parseInt(hh, 10) + Math.floor(endMinutes / 60);
+    const endMm = endMinutes % 60;
+    const endStr = `${datePrefix}T${String(endHh).padStart(2, '0')}${String(endMm).padStart(2, '0')}00`;
+
+    icsEvents += `BEGIN:VEVENT
+UID:dieta-${pk}-${item.key}-${idx}@passopasso.app
+DTSTAMP:${datePrefix}T060000Z
+DTSTART:${startStr}
+DTEND:${endStr}
+RRULE:FREQ=DAILY
+SUMMARY:${item.title} (Dieta ${profile.shortName})
+DESCRIPTION:${item.desc} - https://dieta-passopasso-4uu5.vercel.app/
+STATUS:CONFIRMED
+BEGIN:VALARM
+TRIGGER:-PT0M
+ACTION:AUDIO
+DESCRIPTION:${item.title}
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT0M
+ACTION:DISPLAY
+DESCRIPTION:${item.title}: ${item.desc}
+END:VALARM
+END:VEVENT
+`;
+  });
+
+  const icsBody = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Dieta PassoPasso PRO//Piano Pastoressa//IT
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Sveglie Pasti Dieta (${profile.shortName})
+${icsEvents}END:VCALENDAR`;
+
+  const blob = new Blob([icsBody], { type: 'text/calendar;charset=utf-8' });
+  const downloadUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = `sveglie_dieta_${pk}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 10000);
+
+  showToast('📅 File sveglie scaricato! Tocca "Apri" o "Aggiungi al Calendario" per far squillare il telefono ogni giorno!', 6000);
+}
+
+function openAndroidClockAlarms() {
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (!isAndroid) {
+    exportDietAlarmsICS();
+    return;
+  }
+  const mealTimes = appState.mealTimes || DEFAULT_MEAL_TIMES;
+  const [hh, mm] = (mealTimes.pranzo || '13:00').split(':');
+  const clockIntent = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.HOUR=${parseInt(hh, 10)};i.android.intent.extra.MINUTES=${parseInt(mm, 10)};S.android.intent.extra.MESSAGE=Pranzo%20Dieta%20PassoPasso;B.android.intent.extra.SKIP_UI=false;end`;
+  window.location.href = clockIntent;
+}
+
 async function requestNotificationPermission() {
-  if (!('Notification' in window)) return;
+  if (!('Notification' in window)) {
+    showToast('⚠️ Le notifiche non sono supportate da questo browser.');
+    return;
+  }
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
     showToast('🔔 Avvisi sonori e notifiche stile WhatsApp attivati!');
     pinSystemNotificationWidget();
+  } else if (perm === 'denied') {
+    showToast('🔴 Notifiche bloccate da Chrome! Tocca il lucchetto 🔒 nella barra in alto per attivarle.');
   }
 }
 
